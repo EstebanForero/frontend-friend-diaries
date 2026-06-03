@@ -5,6 +5,7 @@ export const groupKeys = {
   all: ['groups'] as const,
   lists: () => [...groupKeys.all, 'list'] as const,
   detail: (id: string) => [...groupKeys.all, id] as const,
+  members: (id: string) => [...groupKeys.all, id, 'members'] as const,
 }
 
 export function useGroups() {
@@ -35,6 +36,14 @@ export function useCreateGroup() {
 export function useInviteMember(groupId: string) {
   return useMutation({
     mutationFn: (payload: InvitePayload) => groupsApi.invite(groupId, payload),
+  })
+}
+
+export function useGroupMembers(groupId: string) {
+  return useQuery({
+    queryKey: groupKeys.members(groupId),
+    queryFn: () => groupsApi.getMembers(groupId),
+    enabled: !!groupId,
   })
 }
 

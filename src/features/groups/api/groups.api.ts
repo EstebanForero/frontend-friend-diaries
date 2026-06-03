@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api/client'
-import type { Group, GroupMember } from '@/types'
+import type { Group, GroupMemberDetail } from '@/types'
 
 export interface CreateGroupPayload {
   name: string
@@ -19,6 +19,9 @@ export const groupsApi = {
 
   create: (payload: CreateGroupPayload) =>
     apiClient.post<Group>('/groups', payload),
+
+  getMembers: (groupId: string) =>
+    apiClient.get<GroupMemberDetail[]>(`/groups/${groupId}/members`),
 
   invite: (groupId: string, payload: InvitePayload) =>
     apiClient.post<void>(`/groups/${groupId}/invite`, payload),

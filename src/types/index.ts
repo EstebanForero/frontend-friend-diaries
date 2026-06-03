@@ -92,3 +92,40 @@ export interface PaginatedNotifications {
   notifications: Notification[]
   unread_count: number
 }
+
+export interface GroupMemberDetail {
+  user_id: string
+  display_name: string
+  app_id: string
+  role: MemberRole
+  joined_at: string | null
+}
+
+export interface Friend {
+  friendship_id: string
+  user_id: string
+  display_name: string
+  app_id: string
+  tag: string
+  nickname: string
+  since: string
+}
+
+export interface FriendRequest {
+  friendship_id: string
+  requester_id: string
+  display_name: string
+  app_id: string
+  sent_at: string
+}
+
+export const FRIEND_TAGS = [
+  { value: 'best_friend', label: 'Best friend' },
+  { value: 'friend', label: 'Friend' },
+  { value: 'partner', label: 'Partner' },
+  { value: 'boyfriend', label: 'Boyfriend' },
+  { value: 'girlfriend', label: 'Girlfriend' },
+  { value: 'family', label: 'Family' },
+] as const
+
+export type FriendTagValue = (typeof FRIEND_TAGS)[number]['value']

@@ -9,6 +9,7 @@ import { useGroup } from '@/features/groups/hooks/useGroups'
 import { useNotesByDate, useCreateNote } from '@/features/notes/hooks/useNotes'
 import { useAuthStore } from '@/store/auth.store'
 import { InviteDialog } from '@/features/groups/components/InviteDialog'
+import { MembersSheet } from '@/features/groups/components/MembersSheet'
 import { formatDate, formatTime, isToday, todayDateString } from '@/lib/utils'
 import type { Note } from '@/types'
 
@@ -62,6 +63,7 @@ function DiaryPage() {
           <p className="text-sm text-muted-foreground mt-1">{formatDate(date)}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <MembersSheet groupId={groupId} groupName={group?.name ?? ''} />
           <InviteDialog groupId={groupId} />
           <div className="flex items-center gap-1">
             <Button variant="outline" size="icon" className="size-8" onClick={prevDay}>

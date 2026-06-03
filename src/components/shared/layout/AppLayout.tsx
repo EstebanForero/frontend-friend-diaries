@@ -1,10 +1,11 @@
 import { Link } from '@tanstack/react-router'
-import { Bell, BookHeart, BookOpen, LogOut, Settings } from 'lucide-react'
+import { Bell, BookHeart, BookOpen, LogOut, Settings, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLogout } from '@/features/auth/hooks/useAuth'
 import { useAuthStore } from '@/store/auth.store'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { CopyableId } from '@/components/ui/copyable-id'
+import { MobileNav } from '@/components/shared/navigation/MobileNav'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -40,6 +41,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             Your space
           </p>
           <NavLink to="/app/groups" icon={<BookOpen className="size-4" />} label="Diaries" />
+          <NavLink to="/app/friends" icon={<Users className="size-4" />} label="Friends" />
           <NavLink to="/app/notifications" icon={<Bell className="size-4" />} label="Notifications" />
 
           <p className="mt-4 px-3 py-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
@@ -77,8 +79,10 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main content */}
       <main className="flex-1 flex flex-col min-h-screen overflow-auto">
-        <div className="flex-1 p-5 md:p-8">{children}</div>
+        <div className="flex-1 p-5 pb-24 md:pb-8 md:p-8">{children}</div>
       </main>
+
+      <MobileNav />
     </div>
   )
 }
