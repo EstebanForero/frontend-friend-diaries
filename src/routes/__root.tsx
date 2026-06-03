@@ -1,5 +1,5 @@
+import React from 'react'
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import type { QueryClient } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from '@/components/ui/sonner'
@@ -10,16 +10,25 @@ interface RouterContext {
   auth: AuthState
 }
 
+// Lazy-load router devtools — never bundled in production.
+const TanStackRouterDevtools = import.meta.env.DEV
+  ? React.lazy(() =>
+      import('@tanstack/router-devtools').then((mod) => ({
+        default: mod.TanStackRouterDevtools,
+      })),
+    )
+  : () => null
+
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: () => (
     <>
       <Outlet />
       <Toaster position="top-right" richColors />
       {import.meta.env.DEV && (
-        <>
+        <React.Suspense>
           <TanStackRouterDevtools position="bottom-right" />
           <ReactQueryDevtools buttonPosition="bottom-left" />
-        </>
+        </React.Suspense>
       )}
     </>
   ),
