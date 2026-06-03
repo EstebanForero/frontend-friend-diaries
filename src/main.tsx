@@ -6,6 +6,7 @@ import { routeTree } from './routeTree.gen'
 import { queryClient } from './lib/api/query-client'
 import { useAuthStore } from './store/auth.store'
 import { authApi } from './features/auth/api/auth.api'
+import { ApiError } from './lib/api/client'
 import { sessionStore } from './lib/session/session-store'
 import './index.css'
 
@@ -46,10 +47,22 @@ function App() {
           refreshToken: data.refresh_token ?? session?.refreshToken ?? null,
           savedAt: new Date().toISOString(),
         })
-      } catch {
+      } catch (err) {
         if (cancelled) return
-        await sessionStore.clear()
-        auth.clearAuth()
+        // Only wipe the session for definitive auth failures (401/403).
+        // Network errors or server hiccups should NOT log the user out.
+        const isAuthFailure = err instanceof ApiError && (err.status === 401 || err.status === 403)
+        if (isAuthFailure) {
+          await sessionStore.clear()
+          auth.clearAuth()
+        } else if (session?.user) {
+          // Couldn't reach the server but we have a stored session — keep the user
+          // logged in with the cached user data and stop the loading spinner.
+          // API calls will fail individually until connectivity is restored.
+          auth.setLoading(false)
+        } else {
+          auth.clearAuth()
+        }
       }
     }
 

@@ -26,8 +26,7 @@ const webSessionStore: SessionStore = {
     }
   },
   async save(session) {
-    const { refreshToken: _refreshToken, ...safeSession } = session
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(safeSession))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
   },
   async clear() {
     localStorage.removeItem(STORAGE_KEY)

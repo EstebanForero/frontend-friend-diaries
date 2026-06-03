@@ -23,7 +23,7 @@ export function useLogin() {
     mutationFn: authApi.login,
     onSuccess: async (data) => {
       setAuth(data.user, data.access_token)
-      void sessionStore.save({
+      await sessionStore.save({
         user: data.user,
         refreshToken: data.refresh_token ?? null,
         savedAt: new Date().toISOString(),

@@ -32,6 +32,7 @@ export const authApi = {
       refreshToken ? { headers: { 'X-Refresh-Token': refreshToken } } : undefined,
     ),
 
+
   logout: () =>
     apiClient.post<void>('/auth/logout'),
 

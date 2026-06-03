@@ -318,7 +318,7 @@ function compressImageForStorage(file: File): Promise<string> {
 
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file)
-    const img = new Image()
+    const img = document.createElement('img')
     img.onload = () => {
       URL.revokeObjectURL(objectUrl)
 
