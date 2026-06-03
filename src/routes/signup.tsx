@@ -7,6 +7,7 @@ import { AuthLayout } from '@/components/shared/layout/AuthLayout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PasswordInput } from '@/components/ui/password-input'
 import { useRegister } from '@/features/auth/hooks/useAuth'
 
 const schema = z
@@ -30,9 +31,11 @@ export const Route = createFileRoute('/signup')({
 function SignupPage() {
   const { mutate: register, isPending } = useRegister()
   const router = useRouter()
-  const { register: rf, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-  })
+  const {
+    register: rf,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({ resolver: zodResolver(schema) })
 
   const onSubmit = (data: FormData) => {
     register(
@@ -50,38 +53,44 @@ function SignupPage() {
   return (
     <AuthLayout title="Create your account" description="Start your shared diary journey">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="display_name">Display name</Label>
           <Input id="display_name" placeholder="Your name" {...rf('display_name')} />
-          {errors.display_name && <p className="text-sm text-destructive">{errors.display_name.message}</p>}
+          {errors.display_name && (
+            <p className="text-xs text-destructive">{errors.display_name.message}</p>
+          )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
           <Input id="email" type="email" placeholder="you@example.com" {...rf('email')} />
-          {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+          {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" {...rf('password')} />
-          {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+          <PasswordInput id="password" placeholder="At least 8 characters" {...rf('password')} />
+          {errors.password && (
+            <p className="text-xs text-destructive">{errors.password.message}</p>
+          )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="confirm_password">Confirm password</Label>
-          <Input id="confirm_password" type="password" {...rf('confirm_password')} />
-          {errors.confirm_password && <p className="text-sm text-destructive">{errors.confirm_password.message}</p>}
+          <PasswordInput id="confirm_password" placeholder="Repeat your password" {...rf('confirm_password')} />
+          {errors.confirm_password && (
+            <p className="text-xs text-destructive">{errors.confirm_password.message}</p>
+          )}
         </div>
 
-        <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending ? 'Creating account...' : 'Create account'}
+        <Button type="submit" className="w-full mt-2" disabled={isPending}>
+          {isPending ? 'Creating account…' : 'Create account'}
         </Button>
       </form>
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{' '}
-        <Link to="/login" className="text-foreground font-medium hover:underline">
+        <Link to="/login" className="text-primary font-medium hover:underline">
           Sign in
         </Link>
       </p>

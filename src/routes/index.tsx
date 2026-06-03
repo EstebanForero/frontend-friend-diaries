@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { BookHeart, Heart, Lock, MessageCircleHeart, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { BookOpen, Heart, Lock, Users } from 'lucide-react'
 
 export const Route = createFileRoute('/')({
   component: LandingPage,
@@ -9,35 +9,58 @@ export const Route = createFileRoute('/')({
 function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      {/* Warm glow behind hero */}
+      <div
+        className="pointer-events-none fixed inset-0 -z-10"
+        aria-hidden
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 50% at 50% -5%, oklch(0.85 0.12 12 / 0.18), transparent)',
+        }}
+      />
+
+      {/* Header */}
+      <header className="border-b bg-card/60 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BookOpen className="size-6 text-primary" />
-            <span className="font-bold text-lg">Friend Diaries</span>
+            <BookHeart className="size-5 text-primary" />
+            <span className="font-bold">Friend Diaries</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" size="sm" asChild>
               <Link to="/login">Sign in</Link>
             </Button>
-            <Button asChild>
+            <Button size="sm" asChild>
               <Link to="/signup">Get started</Link>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-20 text-center space-y-16">
-        <section className="space-y-6 max-w-2xl mx-auto">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Your private shared diary
+      <main>
+        {/* Hero */}
+        <section className="container mx-auto px-5 pt-20 pb-16 text-center space-y-8 max-w-2xl">
+          <div className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-1.5 text-sm text-muted-foreground shadow-sm">
+            <Sparkles className="size-3.5 text-primary" />
+            <span>Private · Intimate · Yours</span>
+          </div>
+
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight">
+            Your private corner of the internet,{' '}
+            <span className="text-primary">shared with the people you love</span>
           </h1>
-          <p className="text-xl text-muted-foreground">
-            Write daily notes and share them with your partner, best friend, or a small group.
-            Stay emotionally connected, one note at a time.
+
+          <p className="text-lg text-muted-foreground leading-relaxed">
+            Write your day. React with love. Stay close — no matter the distance.
+            A diary built for two, or the small circle that matters most.
           </p>
-          <div className="flex items-center justify-center gap-4">
-            <Button size="lg" asChild>
-              <Link to="/signup">Start for free</Link>
+
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <Button size="lg" asChild className="gap-2">
+              <Link to="/signup">
+                <Heart className="size-4" />
+                Start for free
+              </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
               <Link to="/login">Sign in</Link>
@@ -45,19 +68,56 @@ function LandingPage() {
           </div>
         </section>
 
-        <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
-          {[
-            { icon: <Heart className="size-5" />, title: 'Built for closeness', desc: 'Perfect for couples, best friends, and small groups who want to stay connected.' },
-            { icon: <BookOpen className="size-5" />, title: 'Daily shared timeline', desc: 'Write multiple notes throughout the day. React and reply to each other.' },
-            { icon: <Lock className="size-5" />, title: 'Private by design', desc: 'Your diary is never public. Only your group members can see your notes.' },
-            { icon: <Users className="size-5" />, title: 'Invite anyone', desc: 'Invite a friend with their unique ID. Free plan supports 2 members per group.' },
-          ].map((feat) => (
-            <div key={feat.title} className="rounded-xl border p-5 space-y-3">
-              <div className="text-primary">{feat.icon}</div>
-              <h3 className="font-semibold">{feat.title}</h3>
-              <p className="text-sm text-muted-foreground">{feat.desc}</p>
-            </div>
-          ))}
+        {/* Feature cards */}
+        <section className="container mx-auto px-5 pb-20">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                icon: <MessageCircleHeart className="size-5" />,
+                title: 'Write together',
+                desc: 'Both of you can write throughout the day. Your notes appear side by side on the same timeline.',
+              },
+              {
+                icon: <Heart className="size-5" />,
+                title: 'React with care',
+                desc: 'A ❤️, a 🫂, a ⭐ — small reactions that say "I read this and I felt it."',
+              },
+              {
+                icon: <Lock className="size-5" />,
+                title: 'Completely private',
+                desc: 'Your diary is never public. Notes are only visible to the people you invite.',
+              },
+              {
+                icon: <BookHeart className="size-5" />,
+                title: 'Browse your story',
+                desc: 'Every day is saved. Go back to any moment and relive it together.',
+              },
+            ].map((feat) => (
+              <div
+                key={feat.title}
+                className="rounded-2xl border bg-card p-6 space-y-3 hover:border-primary/30 hover:shadow-sm transition-all"
+              >
+                <div className="inline-flex items-center justify-center size-10 rounded-xl bg-primary/10 text-primary">
+                  {feat.icon}
+                </div>
+                <h3 className="font-semibold">{feat.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{feat.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* CTA strip */}
+        <section className="border-t bg-card">
+          <div className="container mx-auto px-5 py-14 text-center space-y-5">
+            <h2 className="text-2xl font-bold">Ready to start your shared diary?</h2>
+            <p className="text-muted-foreground">
+              Free forever for two people. Create your first diary in under a minute.
+            </p>
+            <Button size="lg" asChild>
+              <Link to="/signup">Create your diary</Link>
+            </Button>
+          </div>
         </section>
       </main>
     </div>

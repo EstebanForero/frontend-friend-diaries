@@ -3,6 +3,7 @@ import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from '@/components/ui/sonner'
+import { useSystemTheme } from '@/hooks/useTheme'
 import type { AuthState } from '@/store/auth.store'
 
 interface RouterContext {
@@ -20,7 +21,13 @@ const TanStackRouterDevtools = import.meta.env.DEV
   : () => null
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-  component: () => (
+  component: RootComponent,
+})
+
+function RootComponent() {
+  useSystemTheme()
+
+  return (
     <>
       <Outlet />
       <Toaster position="top-right" richColors />
@@ -31,5 +38,5 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         </React.Suspense>
       )}
     </>
-  ),
-})
+  )
+}

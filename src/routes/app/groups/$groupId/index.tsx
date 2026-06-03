@@ -1,15 +1,16 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, Plus, Send } from 'lucide-react'
+import { createFileRoute } from '@tanstack/react-router'
+import { ChevronLeft, ChevronRight, Send } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useGroup } from '@/features/groups/hooks/useGroups'
 import { useNotesByDate, useCreateNote } from '@/features/notes/hooks/useNotes'
 import { useAuthStore } from '@/store/auth.store'
-import { formatDate, isToday, todayDateString } from '@/lib/utils'
+import { InviteDialog } from '@/features/groups/components/InviteDialog'
+import { formatDate, formatTime, isToday, todayDateString } from '@/lib/utils'
 import type { Note } from '@/types'
-import { formatTime } from '@/lib/utils'
 
 export const Route = createFileRoute('/app/groups/$groupId/')({
   component: DiaryPage,
@@ -26,6 +27,7 @@ function DiaryPage() {
   const { mutate: createNote, isPending: isCreating } = useCreateNote(groupId, date)
 
   const canWrite = isToday(date)
+  const isAtToday = date >= todayDateString()
 
   const handleSubmit = () => {
     if (!content.trim()) return
@@ -53,62 +55,79 @@ function DiaryPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold">{group?.name ?? 'Loading...'}</h1>
-          <p className="text-sm text-muted-foreground">{formatDate(date)}</p>
+          <h1 className="text-xl font-bold leading-none">{group?.name ?? '…'}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{formatDate(date)}</p>
         </div>
-        <div className="flex items-center gap-1">
-          <Button variant="outline" size="icon" onClick={prevDay}>
-            <ChevronLeft className="size-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={nextDay}
-            disabled={date >= todayDateString()}
-          >
-            <ChevronRight className="size-4" />
-          </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <InviteDialog groupId={groupId} />
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" className="size-8" onClick={prevDay}>
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-8"
+              onClick={nextDay}
+              disabled={isAtToday}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
+      {/* Notes */}
       {isLoading ? (
         <div className="space-y-4">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="h-24 rounded-xl border bg-muted animate-pulse" />
+          {[1, 2].map((i) => (
+            <div key={i} className="h-28 rounded-2xl border bg-muted animate-pulse" />
           ))}
         </div>
       ) : (
         <div className="space-y-4">
           {notes?.map((note) => (
-            <NoteCard key={note.id} note={note} currentUserId={user?.id ?? ''} groupId={groupId} date={date} />
+            <NoteCard key={note.id} note={note} isOwn={note.author_id === user?.id} />
           ))}
-
-          {notes?.length === 0 && (
-            <p className="text-center text-muted-foreground py-12">
-              {canWrite ? 'No notes yet. Be the first to write today.' : 'No notes on this day.'}
-            </p>
+          {(notes?.length ?? 0) === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-sm text-muted-foreground">
+                {canWrite
+                  ? 'Nothing written yet today. How are you feeling?'
+                  : 'No entries on this day.'}
+              </p>
+            </div>
           )}
         </div>
       )}
 
+      {/* Write box */}
       {canWrite && (
-        <div className="rounded-xl border p-4 space-y-3">
+        <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
           <Textarea
             placeholder="What's on your mind today?"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="resize-none min-h-[100px] border-0 focus-visible:ring-0 p-0"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit()
+            }}
+            className="resize-none min-h-[120px] border-0 focus-visible:ring-0 rounded-none px-5 pt-4 pb-2 text-sm leading-relaxed bg-transparent"
           />
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30">
+            <p className="text-xs text-muted-foreground">
+              <kbd className="font-mono">⌘ Enter</kbd> to post
+            </p>
             <Button
+              size="sm"
               onClick={handleSubmit}
               disabled={!content.trim() || isCreating}
-              size="sm"
+              className="gap-1.5"
             >
-              <Send className="size-4" />
-              {isCreating ? 'Posting...' : 'Post note'}
+              <Send className="size-3.5" />
+              {isCreating ? 'Posting…' : 'Post'}
             </Button>
           </div>
         </div>
@@ -117,21 +136,38 @@ function DiaryPage() {
   )
 }
 
-function NoteCard({ note, currentUserId, groupId, date }: {
-  note: Note
-  currentUserId: string
-  groupId: string
-  date: string
-}) {
+function NoteCard({ note, isOwn }: { note: Note; isOwn: boolean }) {
   return (
-    <div className="rounded-xl border p-4 space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          {formatTime(note.created_at)}
-          {note.is_edited && ' · Edited'}
-        </span>
+    <div
+      className={`rounded-2xl border bg-card shadow-sm overflow-hidden transition-shadow hover:shadow-md ${
+        isOwn ? 'border-primary/20' : ''
+      }`}
+    >
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        <Avatar className="size-7 shrink-0">
+          <AvatarFallback
+            className={`text-[10px] font-semibold ${
+              isOwn ? 'bg-primary/15 text-primary' : 'bg-accent text-accent-foreground'
+            }`}
+          >
+            {isOwn ? 'ME' : '?'}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex items-baseline gap-2">
+          <span className="text-xs font-semibold">{isOwn ? 'You' : 'Them'}</span>
+          <span className="text-xs text-muted-foreground">{formatTime(note.created_at)}</span>
+          {note.is_edited && (
+            <span className="text-[10px] text-muted-foreground italic">edited</span>
+          )}
+        </div>
       </div>
-      <p className="text-sm whitespace-pre-wrap">{note.content}</p>
+      <p
+        className={`px-4 pb-4 text-sm leading-relaxed whitespace-pre-wrap ${
+          note.is_deleted ? 'italic text-muted-foreground' : ''
+        }`}
+      >
+        {note.content}
+      </p>
     </div>
   )
 }
