@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 
+const tauriDevHost = process.env.TAURI_DEV_HOST
+
 export default defineConfig({
   plugins: [
     TanStackRouterVite({
@@ -21,6 +23,15 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    strictPort: true,
+    host: tauriDevHost || false,
+    hmr: tauriDevHost
+      ? {
+          protocol: 'ws',
+          host: tauriDevHost,
+          port: 5173,
+        }
+      : undefined,
     proxy: {
       '/api': {
         target: process.env.VITE_PROXY_TARGET || 'http://localhost:8080',

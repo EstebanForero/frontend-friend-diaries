@@ -14,6 +14,7 @@ export interface LoginPayload {
 
 export interface AuthResponse {
   access_token: string
+  refresh_token?: string
   user: User
 }
 
@@ -24,8 +25,12 @@ export const authApi = {
   login: (payload: LoginPayload) =>
     apiClient.post<AuthResponse>('/auth/login', payload),
 
-  refresh: () =>
-    apiClient.post<AuthResponse>('/auth/refresh'),
+  refresh: (refreshToken?: string | null) =>
+    apiClient.post<AuthResponse>(
+      '/auth/refresh',
+      refreshToken ? { refresh_token: refreshToken } : undefined,
+      refreshToken ? { headers: { 'X-Refresh-Token': refreshToken } } : undefined,
+    ),
 
   logout: () =>
     apiClient.post<void>('/auth/logout'),

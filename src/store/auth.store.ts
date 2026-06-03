@@ -6,6 +6,7 @@ export interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
+  restoreSession: (user: User) => void
   setAuth: (user: User, accessToken: string) => void
   clearAuth: () => void
   setLoading: (loading: boolean) => void
@@ -15,6 +16,10 @@ export const useAuthStore = create<AuthState>()((set) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,
+
+  restoreSession: (user) => {
+    set({ user, isAuthenticated: true, isLoading: true })
+  },
 
   setAuth: (user, accessToken) => {
     apiClient.setAccessToken(accessToken)

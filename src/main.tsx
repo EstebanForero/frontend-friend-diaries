@@ -6,6 +6,7 @@ import { routeTree } from './routeTree.gen'
 import { queryClient } from './lib/api/query-client'
 import { useAuthStore } from './store/auth.store'
 import { authApi } from './features/auth/api/auth.api'
+import { sessionStore } from './lib/session/session-store'
 import './index.css'
 
 const router = createRouter({
@@ -26,18 +27,37 @@ function App() {
   const auth = useAuthStore()
 
   React.useEffect(() => {
-    authApi
-      .refresh()
-      .then((data) => {
+    let cancelled = false
+
+    async function restoreAuth() {
+      const session = await sessionStore.load()
+      if (cancelled) return
+
+      if (session?.user) {
+        auth.restoreSession(session.user)
+      }
+
+      try {
+        const data = await authApi.refresh(session?.refreshToken)
+        if (cancelled) return
         auth.setAuth(data.user, data.access_token)
-      })
-      .catch(() => {
-        if (useAuthStore.getState().isAuthenticated) {
-          auth.setLoading(false)
-          return
-        }
+        await sessionStore.save({
+          user: data.user,
+          refreshToken: data.refresh_token ?? session?.refreshToken ?? null,
+          savedAt: new Date().toISOString(),
+        })
+      } catch {
+        if (cancelled) return
+        await sessionStore.clear()
         auth.clearAuth()
-      })
+      }
+    }
+
+    void restoreAuth()
+
+    return () => {
+      cancelled = true
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

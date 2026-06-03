@@ -1,3 +1,5 @@
+import { isTauriRuntime } from '@/lib/runtime'
+
 const BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_URL || '/api')
 
 export class ApiError extends Error {
@@ -31,6 +33,10 @@ class ApiClient {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(rest.headers as Record<string, string>),
+    }
+
+    if (isTauriRuntime()) {
+      headers['X-Friend-Diaries-Client'] = 'tauri'
     }
 
     if (this.accessToken) {
