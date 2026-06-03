@@ -11,7 +11,7 @@ function GroupSettingsPage() {
   const { data: group } = useGroup(groupId)
 
   return (
-    <div className="max-w-lg space-y-6">
+    <div className="max-w-lg mx-auto space-y-6">
       <h1 className="text-2xl font-bold">Group Settings</h1>
 
       <Card>

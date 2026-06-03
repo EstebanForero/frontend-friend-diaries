@@ -41,7 +41,7 @@ function NewGroupPage() {
   }
 
   return (
-    <div className="max-w-lg space-y-6">
+    <div className="max-w-lg mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Create a new diary</h1>
         <p className="text-muted-foreground text-sm">Give your shared diary a name</p>

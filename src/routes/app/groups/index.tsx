@@ -12,7 +12,7 @@ function GroupsPage() {
   const { data: groups, isLoading } = useGroups()
 
   return (
-    <div className="space-y-8 max-w-3xl">
+    <div className="space-y-8 max-w-3xl mx-auto">
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">Your Diaries</h1>

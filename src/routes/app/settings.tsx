@@ -12,7 +12,7 @@ function SettingsPage() {
   const { user } = useAuthStore()
 
   return (
-    <div className="max-w-lg space-y-6">
+    <div className="max-w-lg mx-auto space-y-6">
       <h1 className="text-2xl font-bold">Settings</h1>
 
       <Card>

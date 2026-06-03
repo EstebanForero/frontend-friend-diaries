@@ -22,7 +22,7 @@ function NotificationsPage() {
   const { mutate: markAllRead } = useMarkAllNotificationsRead()
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold">Notifications</h1>

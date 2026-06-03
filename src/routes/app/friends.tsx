@@ -23,7 +23,7 @@ function FriendsPage() {
   const { mutate: decline } = useDeclineFriendRequest()
 
   return (
-    <div className="max-w-2xl space-y-8">
+    <div className="max-w-2xl mx-auto space-y-8">
       {/* Header */}
       <div className="flex items-end justify-between">
         <div>
