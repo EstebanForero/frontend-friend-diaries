@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_URL || '/api')
 
 export class ApiError extends Error {
   constructor(
@@ -98,6 +98,25 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient()
+
+function normalizeBaseUrl(value: string) {
+  if (typeof window === 'undefined') return value
+
+  try {
+    const url = new URL(value, window.location.origin)
+    if (
+      window.location.protocol === 'https:' &&
+      url.protocol === 'http:' &&
+      url.host === window.location.host
+    ) {
+      return `${window.location.origin}${url.pathname}${url.search}`
+    }
+  } catch {
+    return value
+  }
+
+  return value
+}
 
 function getFriendlyErrorMessage(status: number, path: string, serverMessage?: string) {
   if (serverMessage && !isGenericError(serverMessage)) {
