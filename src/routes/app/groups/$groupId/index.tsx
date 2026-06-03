@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { ChevronLeft, ChevronRight, MessageCircle, Plus, Send, User, CalendarDays, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -195,7 +196,19 @@ function DiaryPage() {
   const [content, setContent] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('mine')
   const [showCalendar, setShowCalendar] = useState(false)
-  const calendarRef = useRef<HTMLDivElement>(null)
+  const dateButtonRef = useRef<HTMLButtonElement>(null)
+  const [calendarPos, setCalendarPos] = useState({ top: 0, left: 0 })
+
+  useEffect(() => {
+    if (!showCalendar) return
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (dateButtonRef.current?.contains(target)) return
+      setShowCalendar(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showCalendar])
 
   const { data: group } = useGroup(groupId)
   const { data: members } = useGroupMembers(groupId)
@@ -227,15 +240,6 @@ function DiaryPage() {
     document.getElementById(`note-${search.noteId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [search.noteId, isLoading, notes])
 
-  // Close calendar on outside click
-  useEffect(() => {
-    if (!showCalendar) return
-    const handler = (e: MouseEvent) => {
-      if (!calendarRef.current?.contains(e.target as Node)) setShowCalendar(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [showCalendar])
 
   const prevDay = () => {
     const d = new Date(date + 'T00:00:00')
@@ -266,26 +270,35 @@ function DiaryPage() {
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-base font-bold leading-none truncate">{group?.name ?? '…'}</h1>
-              <div className="relative mt-1.5" ref={calendarRef}>
+              <div className="relative mt-1.5">
                 <button
+                  ref={dateButtonRef}
                   type="button"
-                  onClick={() => setShowCalendar((v) => !v)}
+                  onClick={() => {
+                    const r = dateButtonRef.current?.getBoundingClientRect()
+                    if (r) setCalendarPos({ top: r.bottom + 6, left: r.left })
+                    setShowCalendar((v) => !v)
+                  }}
                   className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <CalendarDays className="size-3 shrink-0" />
                   {formatDate(date)}
                 </button>
-                {showCalendar && (
-                  <div className="absolute left-0 top-6 z-50">
-                    <CalendarPicker
-                      value={date}
-                      onChange={(d) => { setDate(d); setShowCalendar(false) }}
-                      onClose={() => setShowCalendar(false)}
-                      counts={calendarCounts ?? {}}
-                    />
-                  </div>
-                )}
               </div>
+              {showCalendar && createPortal(
+                <div
+                  className="fixed z-[9999]"
+                  style={{ top: calendarPos.top, left: calendarPos.left }}
+                >
+                  <CalendarPicker
+                    value={date}
+                    onChange={(d) => { setDate(d); setShowCalendar(false) }}
+                    onClose={() => setShowCalendar(false)}
+                    counts={calendarCounts ?? {}}
+                  />
+                </div>,
+                document.body,
+              )}
             </div>
             <div className="flex items-center gap-1 shrink-0">
               <Button variant="ghost" size="icon" className="size-7" onClick={prevDay}>
