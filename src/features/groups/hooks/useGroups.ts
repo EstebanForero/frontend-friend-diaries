@@ -56,3 +56,10 @@ export function useAcceptInvitation() {
     },
   })
 }
+
+export function useGroupInvitations() {
+  return useQuery({
+    queryKey: [...groupKeys.all, 'invitations'] as const,
+    queryFn: groupsApi.getInvitations,
+  })
+}

@@ -7,9 +7,13 @@ export const Route = createFileRoute('/app')({
       throw redirect({ to: '/login' })
     }
   },
-  component: () => (
+  component: AppRouteComponent,
+})
+
+function AppRouteComponent() {
+  return (
     <AppLayout>
       <Outlet />
     </AppLayout>
-  ),
-})
+  )
+}

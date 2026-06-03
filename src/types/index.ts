@@ -76,10 +76,17 @@ export type NotificationType =
 
 export type RefType = 'note' | 'group' | 'reply'
 
+export interface PendingGroupInvitation {
+  group_id: string
+  group_name: string
+  invited_at: string
+}
+
 export interface Notification {
   id: string
   recipient_id: string
   actor_id: string
+  actor_display_name: string
   type: NotificationType
   reference_id: string
   ref_type: RefType

@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api/client'
-import type { Group, GroupMemberDetail } from '@/types'
+import type { Group, GroupMemberDetail, PendingGroupInvitation } from '@/types'
 
 export interface CreateGroupPayload {
   name: string
@@ -31,6 +31,9 @@ export const groupsApi = {
 
   declineInvitation: (groupId: string) =>
     apiClient.post<void>(`/groups/${groupId}/decline`),
+
+  getInvitations: () =>
+    apiClient.get<PendingGroupInvitation[]>('/groups/invitations'),
 
   leave: (groupId: string) =>
     apiClient.delete<void>(`/groups/${groupId}/leave`),
