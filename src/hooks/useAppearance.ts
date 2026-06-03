@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 
-export type AppearancePalette = 'classic' | 'blush' | 'love-letter' | 'lavender' | 'midnight'
+export type AppearancePalette =
+  | 'classic'
+  | 'blush'
+  | 'sweethearts'
+  | 'love-letter'
+  | 'lavender'
+  | 'midnight'
 export type BackgroundFit = 'cover' | 'contain' | 'repeat'
 export type FontChoice = 'system' | 'serif' | 'rounded' | 'mono' | 'custom'
 
@@ -22,7 +28,7 @@ export const defaultAppearance: AppearanceSettings = {
   palette: 'classic',
   backgroundImage: null,
   backgroundName: null,
-  backgroundOpacity: 0.16,
+  backgroundOpacity: 0.45,
   backgroundFit: 'cover',
   fontChoice: 'system',
   customFontData: null,
@@ -46,6 +52,12 @@ export const appearancePalettes: Array<{
     label: 'Soft pink',
     description: 'Pink, bright, and gentle.',
     swatches: ['oklch(0.985 0.018 350)', 'oklch(0.62 0.2 350)', 'oklch(0.94 0.055 355)'],
+  },
+  {
+    value: 'sweethearts',
+    label: 'Sweethearts',
+    description: 'Pink hearts with playful candy colors.',
+    swatches: ['oklch(0.985 0.022 5)', 'oklch(0.63 0.22 8)', 'oklch(0.9 0.08 25)'],
   },
   {
     value: 'love-letter',

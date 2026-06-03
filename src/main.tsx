@@ -32,6 +32,10 @@ function App() {
         auth.setAuth(data.user, data.access_token)
       })
       .catch(() => {
+        if (useAuthStore.getState().isAuthenticated) {
+          auth.setLoading(false)
+          return
+        }
         auth.clearAuth()
       })
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -46,7 +50,5 @@ function App() {
 
 const rootElement = document.getElementById('root')!
 ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  <App />,
 )

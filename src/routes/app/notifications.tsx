@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { Bell, Check, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,7 @@ import {
   useNotifications,
   useMarkNotificationRead,
   useMarkAllNotificationsRead,
+  notificationKeys,
 } from '@/features/notifications/hooks/useNotifications'
 import { useAcceptInvitation } from '@/features/groups/hooks/useGroups'
 import { groupsApi } from '@/features/groups/api/groups.api'
@@ -76,18 +77,24 @@ function NotificationRow({
   onRead: () => void
 }) {
   const qc = useQueryClient()
+  const router = useRouter()
   const { mutate: accept, isPending: accepting } = useAcceptInvitation()
   const { mutate: decline } = useMutation({
     mutationFn: (groupId: string) => groupsApi.declineInvitation(groupId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['groups'] })
+      qc.invalidateQueries({ queryKey: notificationKeys.all })
       onRead()
     },
   })
 
   const isInvitation = n.type === 'group_invitation'
+  const actorName = n.actor_display_name?.trim() || n.metadata?.actor_name || 'Someone'
+  const targetGroupId = n.metadata?.group_id || (n.ref_type === 'group' ? n.reference_id : undefined)
+  const targetNoteId = n.metadata?.note_id || (n.ref_type === 'note' ? n.reference_id : undefined)
+  const targetDate = n.metadata?.date
 
-  const initials = (n.actor_display_name ?? '?')
+  const initials = actorName
     .split(' ')
     .map((x: string) => x[0])
     .join('')
@@ -99,7 +106,27 @@ function NotificationRow({
       className={`rounded-2xl border p-4 space-y-3 transition-colors ${
         !n.is_read ? 'bg-accent/20 border-primary/10' : ''
       }`}
-      onClick={() => { if (!n.is_read) onRead() }}
+      role="button"
+      tabIndex={0}
+      onClick={() => {
+        if (!n.is_read) onRead()
+        if (targetGroupId) {
+          void router.navigate({
+            to: '/app/groups/$groupId',
+            params: { groupId: targetGroupId },
+            search: {
+              date: targetDate,
+              noteId: targetNoteId,
+            },
+          })
+        }
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          event.currentTarget.click()
+        }
+      }}
     >
       <div className="flex items-start gap-3">
         <Avatar className="size-9 shrink-0 mt-0.5">
@@ -113,7 +140,7 @@ function NotificationRow({
         </Avatar>
         <div className="flex-1 min-w-0 space-y-0.5">
           <p className="text-sm">
-            <span className="font-semibold">{n.actor_display_name ?? 'Someone'}</span>{' '}
+            <span className="font-semibold">{actorName}</span>{' '}
             {NOTIFICATION_COPY[n.type] ?? n.type}
           </p>
           <p className="text-xs text-muted-foreground">{formatRelativeTime(n.created_at)}</p>
@@ -135,6 +162,7 @@ function NotificationRow({
               accept(n.reference_id, {
                 onSuccess: () => {
                   toast.success('You joined the diary!')
+                  void qc.invalidateQueries({ queryKey: notificationKeys.all })
                   onRead()
                 },
                 onError: (err) => toast.error(err.message),

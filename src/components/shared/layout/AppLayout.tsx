@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { CopyableId } from '@/components/ui/copyable-id'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { MobileNav } from '@/components/shared/navigation/MobileNav'
+import { useGlobalNotifications } from '@/features/notifications/hooks/useNotifications'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -15,6 +16,8 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const { user } = useAuthStore()
   const { mutate: logout } = useLogout()
+  const { data: notificationData } = useGlobalNotifications(!!user)
+  const unreadCount = notificationData?.unread_count ?? 0
 
   const initials =
     user?.display_name
@@ -44,7 +47,12 @@ export function AppLayout({ children }: AppLayoutProps) {
           </p>
           <NavLink to="/app/groups" icon={<BookOpen className="size-4" />} label="Diaries" />
           <NavLink to="/app/friends" icon={<Users className="size-4" />} label="Friends" />
-          <NavLink to="/app/notifications" icon={<Bell className="size-4" />} label="Notifications" />
+          <NavLink
+            to="/app/notifications"
+            icon={<Bell className="size-4" />}
+            label="Notifications"
+            badgeCount={unreadCount}
+          />
 
           <p className="mt-4 px-3 py-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
             Account
@@ -92,19 +100,36 @@ export function AppLayout({ children }: AppLayoutProps) {
         <div className="flex-1 p-5 pb-24 md:pb-8 md:p-8">{children}</div>
       </main>
 
-      <MobileNav />
+      <MobileNav unreadCount={unreadCount} />
     </div>
   )
 }
 
-function NavLink({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
+function NavLink({
+  to,
+  icon,
+  label,
+  badgeCount = 0,
+}: {
+  to: string
+  icon: React.ReactNode
+  label: string
+  badgeCount?: number
+}) {
   return (
     <Link
       to={to}
       className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors [&.active]:bg-primary/10 [&.active]:text-primary [&.active]:font-semibold"
     >
-      {icon}
-      {label}
+      <span className="relative">
+        {icon}
+        {badgeCount > 0 && (
+          <span className="absolute -right-1.5 -top-1.5 min-w-3.5 rounded-full bg-primary px-1 text-center text-[9px] font-semibold leading-3.5 text-primary-foreground">
+            {badgeCount > 9 ? '9+' : badgeCount}
+          </span>
+        )}
+      </span>
+      <span className="flex-1">{label}</span>
     </Link>
   )
 }

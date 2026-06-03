@@ -34,7 +34,11 @@ function NewGroupPage() {
     createGroup(data, {
       onSuccess: (group) => {
         toast.success('Diary created!')
-        void router.navigate({ to: '/app/groups/$groupId', params: { groupId: group.id } })
+        void router.navigate({
+          to: '/app/groups/$groupId',
+          params: { groupId: group.id },
+          search: { date: undefined, noteId: undefined },
+        })
       },
       onError: (err) => toast.error(err.message),
     })

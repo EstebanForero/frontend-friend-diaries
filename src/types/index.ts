@@ -37,15 +37,21 @@ export interface Note {
   updated_at: string
 }
 
-export type ReactionType = 'love' | 'funny' | 'sad' | 'support' | 'seen' | 'favorite'
+export type ReactionType = string
 
-export const REACTION_EMOJIS: Record<ReactionType, string> = {
+export const LEGACY_REACTION_EMOJIS: Record<string, string> = {
   love: '❤️',
   funny: '😂',
   sad: '😢',
   support: '🫂',
   seen: '👀',
   favorite: '⭐',
+}
+
+export const DEFAULT_REACTION_EMOJIS = ['❤️', '😂', '🥹', '😍', '😭', '🫂', '👀', '⭐', '🔥', '✨', '👏', '💌']
+
+export function reactionEmoji(value: ReactionType): string {
+  return LEGACY_REACTION_EMOJIS[value] ?? value
 }
 
 export interface Reaction {

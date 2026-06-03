@@ -117,6 +117,7 @@ function GroupsPage() {
               key={group.id}
               to="/app/groups/$groupId"
               params={{ groupId: group.id }}
+              search={{ date: undefined, noteId: undefined }}
               className="group rounded-2xl border bg-card p-6 flex flex-col gap-4 hover:border-primary/40 hover:shadow-md transition-all duration-200"
             >
               <div className="flex items-start justify-between">

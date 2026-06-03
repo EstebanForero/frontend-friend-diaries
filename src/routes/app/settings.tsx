@@ -206,7 +206,7 @@ function SettingsPage() {
                   id="background-opacity"
                   type="range"
                   min="0"
-                  max="0.45"
+                  max="1"
                   step="0.01"
                   value={settings.backgroundOpacity}
                   onChange={(event) =>

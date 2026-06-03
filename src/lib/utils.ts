@@ -22,6 +22,20 @@ export function formatTime(date: string | Date): string {
   }).format(new Date(date))
 }
 
+export function formatTimeInZone(date: string | Date, timeZone?: string): string {
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone,
+      timeZoneName: 'short',
+    }).format(new Date(date))
+  } catch {
+    return formatTime(date)
+  }
+}
+
 export function formatRelativeTime(date: string | Date): string {
   const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
   const diff = (new Date(date).getTime() - Date.now()) / 1000
