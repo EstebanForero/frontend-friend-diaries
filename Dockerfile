@@ -8,9 +8,8 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 # VITE_API_URL is baked into the JS bundle at build time.
-# When served via nginx (docker-compose), use the relative path /api/v1
-# so the browser routes through nginx which proxies to the backend container.
-ARG VITE_API_URL=/api/v1
+# Use a relative path so HTTPS deployments do not trigger mixed-content blocks.
+ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL
 
 # Use vite build directly: the TanStack Router plugin generates routeTree.gen.ts
