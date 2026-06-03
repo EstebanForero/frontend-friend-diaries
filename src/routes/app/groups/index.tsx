@@ -24,10 +24,10 @@ function GroupsPage() {
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
       {/* Header */}
-      <div className="flex items-end justify-between">
+      <div className="rounded-2xl bg-card/95 backdrop-blur-sm border px-4 py-3 shadow-sm flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Your Diaries</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-xl font-bold">Your Diaries</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
             Each diary is a shared space with someone you care about.
           </p>
         </div>

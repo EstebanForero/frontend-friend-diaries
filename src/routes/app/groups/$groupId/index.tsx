@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, MessageCircle, Plus, Send, User, CalendarDays } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MessageCircle, Plus, Send, User, CalendarDays, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -437,6 +437,7 @@ function NoteCard({
   isTarget?: boolean
 }) {
   const [replyContent, setReplyContent] = useState('')
+  const [showReply, setShowReply] = useState(false)
   const { data: reactions } = useReactions(note.id)
   const { data: replies } = useReplies(note.id)
   const { mutate: upsertReaction } = useUpsertReaction(note.id)
@@ -553,22 +554,39 @@ function NoteCard({
             </div>
           )}
 
-          <div className="flex items-end gap-2 border-t pt-3">
-            <Textarea
-              value={replyContent}
-              onChange={(e) => setReplyContent(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleReply() }}
-              placeholder="Write a comment"
-              className="min-h-9 resize-none rounded-lg bg-background/70 px-3 py-2 text-xs"
-            />
-            <Button
-              size="icon"
-              className="size-9 shrink-0"
-              disabled={!replyContent.trim() || isReplying}
-              onClick={handleReply}
-            >
-              <MessageCircle className="size-4" />
-            </Button>
+          <div className="border-t pt-3">
+            {showReply ? (
+              <div className="flex items-end gap-2">
+                <Textarea
+                  autoFocus
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleReply()
+                    if (e.key === 'Escape') { setShowReply(false); setReplyContent('') }
+                  }}
+                  placeholder="Write a comment… (⌘ Enter to post)"
+                  className="min-h-9 resize-none rounded-lg bg-background/70 px-3 py-2 text-xs"
+                />
+                <div className="flex flex-col gap-1 shrink-0">
+                  <Button size="icon" className="size-8" disabled={!replyContent.trim() || isReplying} onClick={handleReply}>
+                    <Send className="size-3.5" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="size-8" onClick={() => { setShowReply(false); setReplyContent('') }}>
+                    <X className="size-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowReply(true)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <MessageCircle className="size-3.5" />
+                Comment
+              </button>
+            )}
           </div>
         </div>
       </article>

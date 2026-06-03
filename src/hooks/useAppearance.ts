@@ -151,6 +151,44 @@ function applyCustomFont(settings: AppearanceSettings) {
   document.head.appendChild(style)
 }
 
+function applyBackgroundSize(settings: AppearanceSettings) {
+  const root = document.documentElement
+
+  if (!settings.backgroundImage || settings.backgroundFit === 'repeat') {
+    root.style.setProperty('--fd-background-size', 'auto')
+    root.style.setProperty('--fd-background-repeat', 'repeat')
+    root.style.setProperty('--fd-background-position', 'top left')
+    return
+  }
+
+  if (settings.backgroundFit === 'cover') {
+    root.style.setProperty('--fd-background-size', 'cover')
+    root.style.setProperty('--fd-background-repeat', 'no-repeat')
+    root.style.setProperty('--fd-background-position', 'center')
+    return
+  }
+
+  // 'contain' — detect image dimensions and adapt intelligently
+  const img = new window.Image()
+  img.onload = () => {
+    const imgRatio = img.naturalWidth / img.naturalHeight
+    const vpRatio = window.innerWidth / window.innerHeight
+
+    if (imgRatio >= vpRatio) {
+      // Image is wider relative to viewport → fit to width, tile downward
+      root.style.setProperty('--fd-background-size', '100% auto')
+      root.style.setProperty('--fd-background-repeat', 'repeat-y')
+      root.style.setProperty('--fd-background-position', 'top center')
+    } else {
+      // Image is taller relative to viewport → fit to height, tile rightward
+      root.style.setProperty('--fd-background-size', 'auto 100%')
+      root.style.setProperty('--fd-background-repeat', 'repeat-x')
+      root.style.setProperty('--fd-background-position', 'center left')
+    }
+  }
+  img.src = settings.backgroundImage
+}
+
 function applyAppearance(settings: AppearanceSettings) {
   const root = document.documentElement
   root.dataset.appearancePalette = settings.palette
@@ -160,9 +198,7 @@ function applyAppearance(settings: AppearanceSettings) {
     settings.backgroundImage ? `url("${settings.backgroundImage}")` : 'none',
   )
   root.style.setProperty('--fd-background-opacity', String(settings.backgroundOpacity))
-  root.style.setProperty('--fd-background-size', settings.backgroundFit === 'repeat' ? 'auto' : settings.backgroundFit)
-  root.style.setProperty('--fd-background-repeat', settings.backgroundFit === 'repeat' ? 'repeat' : 'no-repeat')
-  root.style.setProperty('--fd-background-position', settings.backgroundFit === 'repeat' ? 'top left' : 'center')
+  applyBackgroundSize(settings)
   applyCustomFont(settings)
 }
 
@@ -171,6 +207,11 @@ export function useAppearance() {
 
   useEffect(() => {
     applyAppearance(settings)
+
+    if (!settings.backgroundImage || settings.backgroundFit !== 'contain') return
+    const onResize = () => applyBackgroundSize(settings)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
   }, [settings])
 
   const setAppearance = useCallback((next: Partial<AppearanceSettings>) => {

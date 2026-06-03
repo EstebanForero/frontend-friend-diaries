@@ -29,7 +29,7 @@ function SettingsPage() {
 
   async function handleBackgroundUpload(file: File | undefined) {
     if (!file) return
-    const dataUrl = await readFileAsDataUrl(file)
+    const dataUrl = await compressImageForStorage(file)
     setAppearance({
       backgroundImage: dataUrl,
       backgroundName: file.name,
@@ -143,7 +143,7 @@ function SettingsPage() {
               <Input
                 ref={backgroundInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml"
                 className="hidden"
                 onChange={(event) => handleBackgroundUpload(event.target.files?.[0])}
               />
@@ -308,5 +308,40 @@ function readFileAsDataUrl(file: File) {
     reader.onload = () => resolve(String(reader.result))
     reader.onerror = () => reject(reader.error)
     reader.readAsDataURL(file)
+  })
+}
+
+// Resize to max 1280px and encode as WebP at 0.8 quality so it fits in localStorage (~150–400 KB).
+function compressImageForStorage(file: File): Promise<string> {
+  const MAX_PX = 1280
+  const QUALITY = 0.8
+
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+
+      let { naturalWidth: w, naturalHeight: h } = img
+      if (w > MAX_PX || h > MAX_PX) {
+        const ratio = Math.min(MAX_PX / w, MAX_PX / h)
+        w = Math.round(w * ratio)
+        h = Math.round(h * ratio)
+      }
+
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
+
+      // Prefer WebP; fall back to JPEG if the browser returns a PNG (unsupported WebP).
+      let dataUrl = canvas.toDataURL('image/webp', QUALITY)
+      if (dataUrl.startsWith('data:image/png')) {
+        dataUrl = canvas.toDataURL('image/jpeg', QUALITY)
+      }
+      resolve(dataUrl)
+    }
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Failed to load image')) }
+    img.src = objectUrl
   })
 }
