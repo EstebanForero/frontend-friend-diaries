@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useAuthStore } from '@/store/auth.store'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { CopyableId } from '@/components/ui/copyable-id'
 
 export const Route = createFileRoute('/app/settings')({
   component: SettingsPage,
@@ -17,6 +18,7 @@ function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Profile</CardTitle>
+          <CardDescription>Your public identity inside Friend Diaries.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between">
@@ -29,7 +31,10 @@ function SettingsPage() {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">App ID</span>
-            <span className="text-sm font-mono">{user?.app_id}</span>
+            <div className="flex flex-col items-end gap-0.5">
+              {user?.app_id && <CopyableId id={user.app_id} className="text-sm" />}
+              <span className="text-[11px] text-muted-foreground">Share this so friends can invite you</span>
+            </div>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Plan</span>

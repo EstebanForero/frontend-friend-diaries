@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { useLogout } from '@/features/auth/hooks/useAuth'
 import { useAuthStore } from '@/store/auth.store'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { CopyableId } from '@/components/ui/copyable-id'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -57,7 +58,9 @@ export function AppLayout({ children }: AppLayoutProps) {
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate leading-none">{user?.display_name}</p>
-              <p className="text-xs text-muted-foreground truncate mt-0.5">{user?.app_id}</p>
+              {user?.app_id && (
+                <CopyableId id={user.app_id} className="text-xs mt-0.5 -ml-1.5" />
+              )}
             </div>
             <Button
               variant="ghost"
