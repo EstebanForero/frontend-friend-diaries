@@ -8,9 +8,12 @@
     <title>Friend Diaries</title>
     <script>
       (function () {
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          document.documentElement.classList.add('dark')
-        }
+        try {
+          var stored = localStorage.getItem('fd-theme')
+          var dark = stored === 'dark' ||
+            (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          if (dark) document.documentElement.classList.add('dark')
+        } catch (e) {}
       })()
     </script>
   </head>

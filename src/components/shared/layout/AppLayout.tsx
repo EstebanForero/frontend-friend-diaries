@@ -5,6 +5,7 @@ import { useLogout } from '@/features/auth/hooks/useAuth'
 import { useAuthStore } from '@/store/auth.store'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { CopyableId } from '@/components/ui/copyable-id'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { MobileNav } from '@/components/shared/navigation/MobileNav'
 
 interface AppLayoutProps {
@@ -28,11 +29,12 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Sidebar */}
       <aside className="hidden md:flex w-64 flex-col border-r bg-card shrink-0">
         {/* Brand */}
-        <div className="flex items-center gap-2.5 px-5 py-5 border-b">
-          <div className="flex items-center justify-center size-8 rounded-lg bg-primary/10">
+        <div className="flex items-center gap-2.5 px-4 py-4 border-b">
+          <div className="flex items-center justify-center size-8 rounded-lg bg-primary/10 shrink-0">
             <BookHeart className="size-4 text-primary" />
           </div>
-          <span className="font-semibold">Friend Diaries</span>
+          <span className="font-semibold flex-1">Friend Diaries</span>
+          <ThemeToggle />
         </div>
 
         {/* Nav */}
@@ -79,6 +81,14 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main content */}
       <main className="flex-1 flex flex-col min-h-screen overflow-auto">
+        {/* Mobile-only top bar */}
+        <div className="flex items-center justify-between px-4 py-3 border-b bg-card md:hidden">
+          <div className="flex items-center gap-2">
+            <BookHeart className="size-4 text-primary" />
+            <span className="font-semibold text-sm">Friend Diaries</span>
+          </div>
+          <ThemeToggle />
+        </div>
         <div className="flex-1 p-5 pb-24 md:pb-8 md:p-8">{children}</div>
       </main>
 
