@@ -3,6 +3,7 @@ import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from '@/components/ui/sonner'
+import { useAppearance } from '@/hooks/useAppearance'
 import { useSystemTheme } from '@/hooks/useTheme'
 import type { AuthState } from '@/store/auth.store'
 
@@ -26,6 +27,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootComponent() {
   useSystemTheme()
+  useAppearance()
 
   return (
     <>

@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { MoreHorizontal, Tag, Trash2 } from 'lucide-react'
+import { Tag, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'

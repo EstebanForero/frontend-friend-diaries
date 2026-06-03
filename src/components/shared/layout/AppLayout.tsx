@@ -25,7 +25,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       .slice(0, 2) ?? '?'
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background/90">
       {/* Sidebar */}
       <aside className="hidden md:flex w-64 flex-col border-r bg-card shrink-0">
         {/* Brand */}

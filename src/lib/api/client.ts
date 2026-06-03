@@ -4,6 +4,7 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
+    public readonly details?: string,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -25,6 +26,7 @@ class ApiClient {
 
   private async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
     const { body, ...rest } = options
+    const method = rest.method ?? 'GET'
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -35,22 +37,35 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.accessToken}`
     }
 
-    const response = await fetch(`${BASE_URL}${path}`, {
-      ...rest,
-      headers,
-      credentials: 'include',
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    })
+    let response: Response
+    try {
+      response = await fetch(`${BASE_URL}${path}`, {
+        ...rest,
+        headers,
+        credentials: 'include',
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+      })
+    } catch {
+      throw new ApiError(
+        0,
+        'Could not reach Friend Diaries. Check that the backend is running and try again.',
+        `${method} ${path}`,
+      )
+    }
 
     if (!response.ok) {
-      let message = `Request failed with status ${response.status}`
+      let serverMessage: string | undefined
       try {
-        const data = (await response.json()) as { error?: string }
-        if (data.error) message = data.error
+        const data = (await response.json()) as { error?: string; message?: string }
+        serverMessage = data.error ?? data.message
       } catch {
         // ignore parse error
       }
-      throw new ApiError(response.status, message)
+      throw new ApiError(
+        response.status,
+        getFriendlyErrorMessage(response.status, path, serverMessage),
+        `${method} ${path}`,
+      )
     }
 
     if (response.status === 204) {
@@ -83,3 +98,58 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient()
+
+function getFriendlyErrorMessage(status: number, path: string, serverMessage?: string) {
+  if (serverMessage && !isGenericError(serverMessage)) {
+    return humanizeServerMessage(serverMessage)
+  }
+
+  switch (status) {
+    case 400:
+      return 'Something in that request was not valid. Check the fields and try again.'
+    case 401:
+      return 'Your session has expired. Sign in again to continue.'
+    case 403:
+      return 'You do not have permission to do that.'
+    case 404:
+      return getNotFoundMessage(path)
+    case 409:
+      return 'That conflicts with something already saved. Refresh and try again.'
+    case 422:
+      return 'Some information is missing or invalid. Check the form and try again.'
+    case 429:
+      return 'Too many attempts. Wait a moment and try again.'
+    default:
+      if (status >= 500) {
+        return 'Friend Diaries had a server problem. Try again in a moment.'
+      }
+      return `Friend Diaries could not complete that request. Status ${status}.`
+  }
+}
+
+function getNotFoundMessage(path: string) {
+  if (path.includes('/groups/')) {
+    return 'That diary could not be found. It may have been deleted, or you may no longer have access.'
+  }
+  if (path.includes('/share/notes/')) {
+    return 'That shared note link is invalid or has expired.'
+  }
+  if (path.includes('/notes/')) {
+    return 'That note could not be found. It may have been deleted or the link may be outdated.'
+  }
+  if (path.includes('/friends')) {
+    return 'That friend request or friendship could not be found.'
+  }
+  return 'That item could not be found. It may have been moved, deleted, or the link may be outdated.'
+}
+
+function isGenericError(message: string) {
+  return /^request failed with status \d+$/i.test(message) || /^not found$/i.test(message)
+}
+
+function humanizeServerMessage(message: string) {
+  if (message === 'internal server error') {
+    return 'Friend Diaries had a server problem. Try again in a moment.'
+  }
+  return message.charAt(0).toUpperCase() + message.slice(1)
+}

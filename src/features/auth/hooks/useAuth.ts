@@ -5,7 +5,6 @@ import { useAuthStore } from '@/store/auth.store'
 import { queryClient } from '@/lib/api/query-client'
 
 export function useRegister() {
-  const { setAuth } = useAuthStore()
   return useMutation({
     mutationFn: authApi.register,
     onSuccess: (user) => {
