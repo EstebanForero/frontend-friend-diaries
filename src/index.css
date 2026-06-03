@@ -59,9 +59,11 @@
   --border:              oklch(0.89 0.012 75);
   --input:               oklch(0.89 0.012 75);
   --ring:                oklch(0.56 0.22 12);
+  --own-note-bg:         oklch(0.91 0.05 12);   /* warm rose */
 }
 
 [data-appearance-palette='blush'] {
+  --own-note-bg:         oklch(0.91 0.05 350);  /* soft pink */
   --fd-theme-pattern: radial-gradient(circle at 16px 16px, oklch(0.62 0.2 350 / 10%) 0 2px, transparent 2.5px);
   --fd-theme-pattern-size: 28px 28px;
   --fd-theme-pattern-opacity: 0.7;
@@ -85,6 +87,7 @@
 }
 
 [data-appearance-palette='love-letter'] {
+  --own-note-bg:         oklch(0.91 0.05 25);   /* warm red parchment */
   --fd-theme-pattern: repeating-linear-gradient(135deg, transparent 0 18px, oklch(0.5 0.2 25 / 7%) 18px 19px), repeating-linear-gradient(0deg, transparent 0 33px, oklch(0.5 0.2 25 / 6%) 33px 34px);
   --fd-theme-pattern-opacity: 0.65;
   --background:          oklch(0.98 0.018 65);
@@ -107,6 +110,7 @@
 }
 
 [data-appearance-palette='sweethearts'] {
+  --own-note-bg:         oklch(0.91 0.06 8);    /* candy pink */
   --fd-theme-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cpath fill='%23d64265' fill-opacity='.13' d='M20 29c0-4 3-7 7-7 2.6 0 4.8 1.4 6 3.6C34.2 23.4 36.4 22 39 22c4 0 7 3 7 7 0 8.5-13 15-13 15S20 37.5 20 29Z'/%3E%3Cpath fill='%23f08ba6' fill-opacity='.16' d='M46 49c0-2.8 2.1-4.9 4.9-4.9 1.8 0 3.4 1 4.1 2.5.8-1.5 2.3-2.5 4.1-2.5 2.8 0 4.9 2.1 4.9 4.9 0 6-9 10.5-9 10.5S46 55 46 49Z'/%3E%3C/svg%3E");
   --fd-theme-pattern-size: 72px 72px;
   --fd-theme-pattern-opacity: 0.85;
@@ -130,6 +134,7 @@
 }
 
 [data-appearance-palette='lavender'] {
+  --own-note-bg:         oklch(0.91 0.045 315);  /* soft violet */
   --fd-theme-pattern: repeating-linear-gradient(90deg, transparent 0 22px, oklch(0.55 0.17 315 / 6%) 22px 23px), repeating-linear-gradient(0deg, transparent 0 22px, oklch(0.55 0.17 315 / 5%) 22px 23px);
   --fd-theme-pattern-opacity: 0.55;
   --background:          oklch(0.98 0.015 310);
@@ -152,6 +157,7 @@
 }
 
 [data-appearance-palette='midnight'] {
+  --own-note-bg:         oklch(0.3 0.07 345);   /* dark rose on midnight */
   --fd-theme-pattern: radial-gradient(circle at 12px 12px, oklch(0.72 0.17 345 / 14%) 0 1px, transparent 1.5px);
   --fd-theme-pattern-size: 30px 30px;
   --fd-theme-pattern-opacity: 0.55;
@@ -176,6 +182,7 @@
 
 /* ── Dark mode: warm charcoal & soft rose ───────────────────────────── */
 .dark {
+  --own-note-bg:         oklch(0.27 0.07 12);   /* dark rose */
   --background:          oklch(0.15 0.018 25);   /* warm very dark brown */
   --foreground:          oklch(0.94 0.01 75);    /* warm cream text */
   --card:                oklch(0.19 0.018 28);   /* slightly lighter warm dark */
@@ -197,6 +204,7 @@
 }
 
 .dark[data-appearance-palette='blush'] {
+  --own-note-bg:         oklch(0.27 0.07 350);
   --background:          oklch(0.16 0.026 345);
   --foreground:          oklch(0.95 0.012 350);
   --card:                oklch(0.2 0.03 345);
@@ -215,6 +223,7 @@
 }
 
 .dark[data-appearance-palette='love-letter'] {
+  --own-note-bg:         oklch(0.28 0.07 25);
   --background:          oklch(0.16 0.024 25);
   --foreground:          oklch(0.95 0.014 65);
   --card:                oklch(0.2 0.026 28);
@@ -233,6 +242,7 @@
 }
 
 .dark[data-appearance-palette='sweethearts'] {
+  --own-note-bg:         oklch(0.29 0.075 8);
   --background:          oklch(0.16 0.026 8);
   --foreground:          oklch(0.95 0.014 10);
   --card:                oklch(0.2 0.03 10);
@@ -251,6 +261,7 @@
 }
 
 .dark[data-appearance-palette='lavender'] {
+  --own-note-bg:         oklch(0.28 0.065 315);
   --background:          oklch(0.16 0.024 300);
   --foreground:          oklch(0.94 0.014 310);
   --card:                oklch(0.2 0.03 302);
@@ -287,7 +298,7 @@
     background-image: var(--fd-background-image);
     background-position: var(--fd-background-position);
     background-repeat: var(--fd-background-repeat);
-    background-size: var(--fd-theme-pattern-size);
+    background-size: var(--fd-background-size);
     opacity: var(--fd-background-opacity);
   }
   body::after {

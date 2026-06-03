@@ -4,6 +4,8 @@ import { notesApi, type CreateNotePayload, type UpdateNotePayload } from '../api
 export const noteKeys = {
   all: ['notes'] as const,
   byDate: (groupId: string, date: string) => [...noteKeys.all, groupId, date] as const,
+  calendar: (groupId: string, month: string, authorId?: string) =>
+    [...noteKeys.all, 'calendar', groupId, month, authorId ?? 'all'] as const,
 }
 
 export function useNotesByDate(groupId: string, date: string) {
@@ -32,6 +34,15 @@ export function useUpdateNote(groupId: string, date: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: noteKeys.byDate(groupId, date) })
     },
+  })
+}
+
+export function useCalendarSummary(groupId: string, month: string, authorId?: string) {
+  return useQuery({
+    queryKey: noteKeys.calendar(groupId, month, authorId),
+    queryFn: () => notesApi.calendarSummary(groupId, month, authorId),
+    enabled: !!groupId && !!month,
+    staleTime: 60_000,
   })
 }
 

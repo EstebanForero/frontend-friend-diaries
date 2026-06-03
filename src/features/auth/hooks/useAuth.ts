@@ -21,13 +21,14 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: authApi.login,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setAuth(data.user, data.access_token)
       void sessionStore.save({
         user: data.user,
         refreshToken: data.refresh_token ?? null,
         savedAt: new Date().toISOString(),
       })
+      await router.invalidate()
       void router.navigate({ to: '/app/groups' })
     },
   })

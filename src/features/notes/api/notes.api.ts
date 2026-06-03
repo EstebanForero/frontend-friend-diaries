@@ -28,4 +28,10 @@ export const notesApi = {
 
   getByShareToken: (token: string) =>
     apiClient.get<Note>(`/share/notes/${token}`),
+
+  calendarSummary: (groupId: string, month: string, authorId?: string) => {
+    const params = new URLSearchParams({ month })
+    if (authorId) params.set('author', authorId)
+    return apiClient.get<Record<string, number>>(`/groups/${groupId}/notes/calendar?${params}`)
+  },
 }

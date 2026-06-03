@@ -28,7 +28,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       .slice(0, 2) ?? '?'
 
   return (
-    <div className="min-h-screen flex bg-background/90">
+    <div className="min-h-screen flex bg-transparent">
       {/* Sidebar */}
       <aside className="hidden md:flex w-64 flex-col border-r bg-card shrink-0">
         {/* Brand */}
@@ -89,6 +89,8 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main content */}
       <main className="flex-1 flex flex-col min-h-screen overflow-auto">
+        {/* Status bar spacer — fills the notch/status bar area on mobile */}
+        <div className="h-[env(safe-area-inset-top)] bg-card md:hidden" />
         {/* Mobile-only top bar */}
         <div className="flex items-center justify-between px-4 py-3 border-b bg-card md:hidden">
           <div className="flex items-center gap-2">

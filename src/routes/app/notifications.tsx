@@ -13,7 +13,7 @@ import {
 import { useAcceptInvitation } from '@/features/groups/hooks/useGroups'
 import { groupsApi } from '@/features/groups/api/groups.api'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { formatRelativeTime } from '@/lib/utils'
+import { cn, formatRelativeTime } from '@/lib/utils'
 import type { Notification } from '@/types'
 
 export const Route = createFileRoute('/app/notifications')({
@@ -35,9 +35,9 @@ function NotificationsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="rounded-2xl bg-card/95 backdrop-blur-sm border px-4 py-3 shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold">Notifications</h1>
+          <h1 className="text-xl font-bold">Notifications</h1>
           {(data?.unread_count ?? 0) > 0 && (
             <Badge>{data?.unread_count}</Badge>
           )}
@@ -103,9 +103,10 @@ function NotificationRow({
 
   return (
     <div
-      className={`rounded-2xl border p-4 space-y-3 transition-colors ${
-        !n.is_read ? 'bg-accent/20 border-primary/10' : ''
-      }`}
+      className={cn(
+        'rounded-2xl border p-4 space-y-3 transition-colors bg-card/95 backdrop-blur-sm',
+        !n.is_read && 'border-l-2 border-l-primary border-primary/20',
+      )}
       role="button"
       tabIndex={0}
       onClick={() => {

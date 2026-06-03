@@ -29,7 +29,7 @@ export const defaultAppearance: AppearanceSettings = {
   backgroundImage: null,
   backgroundName: null,
   backgroundOpacity: 0.45,
-  backgroundFit: 'cover',
+  backgroundFit: 'contain',
   fontChoice: 'system',
   customFontData: null,
   customFontName: null,
