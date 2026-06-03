@@ -1,12 +1,31 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { BookHeart, Heart, Lock, MessageCircleHeart, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useAuthStore } from '@/store/auth.store'
+import { useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({
+  beforeLoad: ({ context }) => {
+    // If auth is already resolved and user is logged in, skip the landing page.
+    if (!context.auth.isLoading && context.auth.isAuthenticated) {
+      throw redirect({ to: '/app/groups' })
+    }
+  },
   component: LandingPage,
 })
 
 function LandingPage() {
+  const { isAuthenticated, isLoading } = useAuthStore()
+  const navigate = useNavigate()
+
+  // Handle the case where auth resolves AFTER the component mounts
+  // (restoreAuth is async so beforeLoad may run before the check completes).
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      void navigate({ to: '/app/groups' })
+    }
+  }, [isAuthenticated, isLoading, navigate])
   return (
     <div className="min-h-screen bg-background">
       {/* Warm glow behind hero */}
