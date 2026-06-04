@@ -418,6 +418,7 @@ function DiaryPage() {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit()
             }}
             className="resize-none min-h-[120px] border-0 focus-visible:ring-0 rounded-none px-5 pt-4 pb-2 text-sm leading-relaxed bg-transparent"
+            onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'end' }), 350)}
           />
           <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30">
             <p className="text-xs text-muted-foreground">
@@ -580,6 +581,7 @@ function NoteCard({
                   }}
                   placeholder="Write a comment… (⌘ Enter to post)"
                   className="min-h-9 resize-none rounded-lg bg-background/70 px-3 py-2 text-xs"
+              onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'end' }), 350)}
                 />
                 <div className="flex flex-col gap-1 shrink-0">
                   <Button size="icon" className="size-8" disabled={!replyContent.trim() || isReplying} onClick={handleReply}>
