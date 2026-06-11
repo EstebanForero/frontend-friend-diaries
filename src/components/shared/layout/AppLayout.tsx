@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Bell, BookHeart, BookOpen, LogOut, Settings, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -18,6 +19,34 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { mutate: logout } = useLogout()
   const { data: notificationData } = useGlobalNotifications(!!user)
   const unreadCount = notificationData?.unread_count ?? 0
+  const mainRef = useRef<HTMLElement>(null)
+
+  // When the Android keyboard appears, visualViewport shrinks. scrollIntoView alone
+  // doesn't account for the keyboard (it measures against the scroll container, not the
+  // visual viewport). This listener fires after the keyboard is fully shown and manually
+  // scrolls the focused input/textarea above the keyboard.
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+
+    const ensureFocusedVisible = () => {
+      const el = document.activeElement as HTMLElement | null
+      if (!el || !['INPUT', 'TEXTAREA'].includes(el.tagName)) return
+
+      const rect = el.getBoundingClientRect()
+      const visibleBottom = vv.offsetTop + vv.height
+      const PADDING = 16
+
+      if (rect.bottom > visibleBottom - PADDING) {
+        const overflow = rect.bottom - (visibleBottom - PADDING)
+        const scrollEl = mainRef.current
+        if (scrollEl) scrollEl.scrollTop += overflow
+      }
+    }
+
+    vv.addEventListener('resize', ensureFocusedVisible)
+    return () => vv.removeEventListener('resize', ensureFocusedVisible)
+  }, [])
 
   const initials =
     user?.display_name
@@ -88,7 +117,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col min-h-screen overflow-auto">
+      <main ref={mainRef} className="flex-1 flex flex-col min-h-screen overflow-auto">
         {/* Status bar spacer — fills the notch/status bar area on mobile */}
         <div className="h-[env(safe-area-inset-top)] bg-card md:hidden" />
         {/* Mobile-only top bar */}

@@ -6,6 +6,7 @@ import { useGroups, useGroupInvitations, useAcceptInvitation } from '@/features/
 import { groupsApi } from '@/features/groups/api/groups.api'
 import { formatDate } from '@/lib/utils'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAutoMarkNotificationsRead } from '@/features/notifications/hooks/useNotifications'
 
 export const Route = createFileRoute('/app/groups/')({
   component: GroupsPage,
@@ -13,6 +14,7 @@ export const Route = createFileRoute('/app/groups/')({
 
 function GroupsPage() {
   const qc = useQueryClient()
+  useAutoMarkNotificationsRead()
   const { data: groups, isLoading } = useGroups()
   const { data: invitations } = useGroupInvitations()
   const { mutate: accept } = useAcceptInvitation()
