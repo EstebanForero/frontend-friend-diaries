@@ -47,6 +47,8 @@ function App() {
           refreshToken: data.refresh_token ?? session?.refreshToken ?? null,
           savedAt: new Date().toISOString(),
         })
+        // Re-run any queries that fired before the token was available
+        void queryClient.invalidateQueries()
       } catch (err) {
         if (cancelled) return
         // Only wipe the session for definitive auth failures (401/403).

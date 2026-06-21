@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, MessageCircle, Plus, Send, User, CalendarDays, X, ImagePlus, Flame, Bell, BellOff } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MessageCircle, Plus, Send, User, CalendarDays, X, ImagePlus, Flame, Bell, Download, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
@@ -13,7 +13,7 @@ import { useAutoMarkNotificationsRead } from '@/features/notifications/hooks/use
 import { useAuthStore } from '@/store/auth.store'
 import { InviteDialog } from '@/features/groups/components/InviteDialog'
 import { MembersSheet } from '@/features/groups/components/MembersSheet'
-import { formatDate, formatTime, formatTimeInZone, isToday, todayDateString } from '@/lib/utils'
+import { formatDate, formatTime, formatTimeInZone, isToday, todayDateString, resolveMediaUrl } from '@/lib/utils'
 import { useCreateReply, useReplies } from '@/features/replies/hooks/useReplies'
 import { useReactions, useRemoveReaction, useUpsertReaction } from '@/features/reactions/hooks/useReactions'
 import { mediaApi } from '@/features/media/api/media.api'
@@ -224,7 +224,7 @@ function DiaryPage() {
 
   const { data: group } = useGroup(groupId)
   const { data: members } = useGroupMembers(groupId)
-  const { data: notes, isLoading } = useNotesByDate(groupId, date)
+  const { data: notes, isLoading, refetch: refetchNotes } = useNotesByDate(groupId, date)
   const { mutate: createNote, isPending: isCreating } = useCreateNote(groupId, date)
 
   const calendarMonth = date.slice(0, 7) // YYYY-MM
@@ -237,10 +237,33 @@ function DiaryPage() {
   const { data: streak } = useStreak(groupId, calendarAuthorId ?? user?.id)
   const { state: pushState, subscribe: subscribePush } = usePushNotifications()
 
+  // Pull-to-refresh
+  const pullStartY = useRef<number | null>(null)
+  const [isPulling, setIsPulling] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handlePullStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    const el = e.currentTarget
+    if (el.scrollTop === 0) pullStartY.current = e.touches[0].clientY
+  }
+  const handlePullMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (pullStartY.current === null) return
+    const dy = e.touches[0].clientY - pullStartY.current
+    setIsPulling(dy > 60)
+  }
+  const handlePullEnd = async () => {
+    if (isPulling) {
+      setIsRefreshing(true)
+      await refetchNotes()
+      setIsRefreshing(false)
+    }
+    pullStartY.current = null
+    setIsPulling(false)
+  }
+
   useAutoMarkNotificationsRead(groupId, date)
 
   const canWrite = isToday(date)
-  const isAtToday = date >= todayDateString()
 
   const visibleNotes = (notes ?? []).filter((n) =>
     viewMode === 'mine' ? n.author_id === user?.id :
@@ -320,7 +343,24 @@ function DiaryPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div
+      className="max-w-2xl mx-auto space-y-6"
+      onTouchStart={handlePullStart}
+      onTouchMove={handlePullMove}
+      onTouchEnd={() => void handlePullEnd()}
+    >
+      {/* Pull-to-refresh indicator */}
+      {(isPulling || isRefreshing) && (
+        <div className="flex justify-center pt-1 pb-2">
+          <div className={cn(
+            'flex items-center gap-2 rounded-full bg-card/90 border px-3 py-1.5 text-xs text-muted-foreground shadow-sm',
+            isRefreshing && 'text-primary',
+          )}>
+            <RefreshCw className={cn('size-3.5', isRefreshing && 'animate-spin')} />
+            {isRefreshing ? 'Refreshing…' : 'Release to refresh'}
+          </div>
+        </div>
+      )}
       {/* Header bubble */}
       <div className="flex items-center gap-3">
         <div className="flex-1 rounded-2xl bg-card/95 backdrop-blur-sm border px-4 py-3 shadow-sm">
@@ -370,7 +410,6 @@ function DiaryPage() {
                 </div>,
                 document.body,
               )}
-            </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
               <Button variant="ghost" size="icon" className="size-7" onClick={prevDay} disabled={!adjacent?.prev}>
@@ -564,6 +603,7 @@ function DiaryPage() {
 
 function NoteImageGrid({ images }: { images: NoteImage[] }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const touchStartX = useRef<number | null>(null)
 
   useEffect(() => {
     if (lightboxIndex === null) return
@@ -583,6 +623,51 @@ function NoteImageGrid({ images }: { images: NoteImage[] }) {
   const prev = (e: React.MouseEvent) => { e.stopPropagation(); setLightboxIndex((i) => i !== null ? (i - 1 + images.length) % images.length : null) }
   const next = (e: React.MouseEvent) => { e.stopPropagation(); setLightboxIndex((i) => i !== null ? (i + 1) % images.length : null) }
 
+  const downloadImage = async (url: string, index: number) => {
+    const filename = `diary-${index + 1}.jpg`
+    try {
+      // Load via crossOrigin so canvas can read the pixels
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      await new Promise<void>((res, rej) => {
+        img.onload = () => res()
+        img.onerror = rej
+        img.src = url
+      })
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      canvas.getContext('2d')!.drawImage(img, 0, 0)
+      canvas.toBlob((blob) => {
+        if (!blob) return
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(blob)
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(a.href)
+      }, 'image/jpeg', 0.92)
+    } catch {
+      // CORS blocked — fall back to direct download (keeps original format)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.target = '_blank'
+      a.click()
+    }
+  }
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    touchStartX.current = null
+    if (Math.abs(dx) < 50) return // too short — treat as tap
+    if (dx < 0) setLightboxIndex((i) => i !== null ? (i + 1) % images.length : null) // swipe left → next
+    else setLightboxIndex((i) => i !== null ? (i - 1 + images.length) % images.length : null) // swipe right → prev
+  }
+
   const n = images.length
   const MAX_SHOWN = 4
   const shown = images.slice(0, MAX_SHOWN)
@@ -595,7 +680,7 @@ function NoteImageGrid({ images }: { images: NoteImage[] }) {
       onClick={() => open(i)}
       className={cn('relative overflow-hidden bg-muted focus:outline-none group', cls)}
     >
-      <img src={img.media_url} alt="" className="size-full object-cover transition-transform duration-200 group-hover:scale-105" />
+      <img src={resolveMediaUrl(img.media_url)} alt="" className="size-full object-cover transition-transform duration-200 group-hover:scale-105" />
       {showOverlay && overflow > 0 && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/55 text-white font-bold text-2xl select-none">
           +{overflow + 1}
@@ -609,7 +694,7 @@ function NoteImageGrid({ images }: { images: NoteImage[] }) {
     grid = (
       <button type="button" onClick={() => open(0)} className="group w-full overflow-hidden rounded-xl focus:outline-none">
         <img
-          src={images[0].media_url}
+          src={resolveMediaUrl(images[0].media_url)}
           alt=""
           className="w-full max-h-72 object-contain rounded-xl bg-muted transition-opacity group-hover:opacity-95"
         />
@@ -645,6 +730,8 @@ function NoteImageGrid({ images }: { images: NoteImage[] }) {
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-sm"
           onClick={close}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           {/* Close */}
           <button
@@ -653,6 +740,16 @@ function NoteImageGrid({ images }: { images: NoteImage[] }) {
             className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
           >
             <X className="size-5" />
+          </button>
+
+          {/* Download */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); void downloadImage(resolveMediaUrl(images[lightboxIndex].media_url), lightboxIndex) }}
+            className="absolute left-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+            title="Download as JPEG"
+          >
+            <Download className="size-5" />
           </button>
 
           {/* Counter */}
@@ -675,7 +772,7 @@ function NoteImageGrid({ images }: { images: NoteImage[] }) {
 
           {/* Image */}
           <img
-            src={images[lightboxIndex].media_url}
+            src={resolveMediaUrl(images[lightboxIndex].media_url)}
             alt=""
             className="max-h-[88vh] max-w-[88vw] rounded-lg object-contain select-none"
             onClick={(e) => e.stopPropagation()}
@@ -705,7 +802,7 @@ function NoteImageGrid({ images }: { images: NoteImage[] }) {
                     i === lightboxIndex ? 'border-white scale-110' : 'border-transparent opacity-60 hover:opacity-90',
                   )}
                 >
-                  <img src={img.media_url} alt="" className="size-full object-cover" />
+                  <img src={resolveMediaUrl(img.media_url)} alt="" className="size-full object-cover" />
                 </button>
               ))}
             </div>

@@ -60,3 +60,18 @@ export function todayDateString(): string {
 export function isToday(dateStr: string): boolean {
   return dateStr === todayDateString()
 }
+
+// Resolves a relative media URL to an absolute one.
+// On web, relative paths like "/api/media/{id}" work fine.
+// In Tauri, the WebView origin is tauri://localhost, so relative paths break —
+// we prepend the API server origin from VITE_API_URL.
+export function resolveMediaUrl(url: string): string {
+  if (!url || url.startsWith('http')) return url
+  const apiBase = import.meta.env.VITE_API_URL as string | undefined
+  if (!apiBase || apiBase.startsWith('/')) return url
+  try {
+    return `${new URL(apiBase).origin}${url}`
+  } catch {
+    return url
+  }
+}
