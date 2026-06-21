@@ -1,14 +1,22 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
-import { QueryClientProvider } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { routeTree } from './routeTree.gen'
 import { queryClient } from './lib/api/query-client'
+import { idbPersister } from './lib/api/idb-persister'
 import { useAuthStore } from './store/auth.store'
 import { authApi } from './features/auth/api/auth.api'
 import { ApiError } from './lib/api/client'
 import { sessionStore } from './lib/session/session-store'
 import './index.css'
+
+// Register the service worker for all users (image caching + push notifications)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {
+    // SW registration failure is non-fatal
+  })
+}
 
 const router = createRouter({
   routeTree,
@@ -77,9 +85,24 @@ function App() {
   }, [])
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister: idbPersister,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // keep cache for 7 days
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) => {
+            const key = query.queryKey as unknown[]
+            // Don't persist notification queries — they must always be fresh
+            if (key[0] === 'notifications') return false
+            // Only persist successful queries
+            return query.state.status === 'success'
+          },
+        },
+      }}
+    >
       <RouterProvider router={router} context={{ queryClient, auth }} />
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   )
 }
 

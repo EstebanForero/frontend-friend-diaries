@@ -27,8 +27,8 @@ export function usePushNotifications() {
     const { key } = await pushApi.getVapidKey()
     if (!key) return
 
-    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
-    await navigator.serviceWorker.ready
+    // SW is already registered in main.tsx — just wait for it to be ready
+    const reg = await navigator.serviceWorker.ready
 
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,

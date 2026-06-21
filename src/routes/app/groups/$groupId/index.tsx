@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, MessageCircle, Plus, Send, User, CalendarDays, X, ImagePlus, Flame, Bell, Download, RefreshCw } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MessageCircle, Plus, Send, User, CalendarDays, X, ImagePlus, Flame, Bell, Download, RefreshCw, Share2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
@@ -837,6 +837,37 @@ function NoteCard({
   const { mutate: removeReaction } = useRemoveReaction(note.id)
   const { mutate: createReply, isPending: isReplying } = useCreateReply(note.id)
 
+  const shareNote = async () => {
+    if (!navigator.share) return
+    try {
+      const shareData: ShareData = { text: note.content || '' }
+
+      // Try to include images (Web Share Level 2)
+      if ((note.images?.length ?? 0) > 0 && navigator.canShare) {
+        const files = (await Promise.all(
+          note.images.map(async (img, i) => {
+            try {
+              const res = await fetch(resolveMediaUrl(img.media_url))
+              const blob = await res.blob()
+              return new File([blob], `diary-image-${i + 1}.jpg`, { type: blob.type })
+            } catch { return null }
+          })
+        )).filter(Boolean) as File[]
+
+        if (files.length > 0 && navigator.canShare({ files })) {
+          shareData.files = files
+        }
+      }
+
+      await navigator.share(shareData)
+    } catch (err) {
+      // User dismissed the share sheet — not an error
+      if (err instanceof Error && err.name !== 'AbortError') {
+        toast.error('Could not open share sheet')
+      }
+    }
+  }
+
   const author = members.find((m) => m.user_id === note.author_id)
   const authorName = isOwn ? 'You' : author?.display_name || 'Unknown member'
   const initials = authorName.split(' ').map((p) => p[0]).join('').toUpperCase().slice(0, 2)
@@ -977,14 +1008,26 @@ function NoteCard({
                 </div>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => setShowReply(true)}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <MessageCircle className="size-3.5" />
-                Comment
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowReply(true)}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <MessageCircle className="size-3.5" />
+                  Comment
+                </button>
+                {typeof navigator !== 'undefined' && 'share' in navigator && (
+                  <button
+                    type="button"
+                    onClick={() => void shareNote()}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Share2 className="size-3.5" />
+                    Share
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>

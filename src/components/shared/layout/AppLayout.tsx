@@ -19,33 +19,30 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { mutate: logout } = useLogout()
   const { data: notificationData } = useGlobalNotifications(!!user)
   const unreadCount = notificationData?.unread_count ?? 0
-  const mainRef = useRef<HTMLElement>(null)
+  const mainRef = useRef<HTMLDivElement>(null)
 
-  // When the Android keyboard appears, visualViewport shrinks. scrollIntoView alone
-  // doesn't account for the keyboard (it measures against the scroll container, not the
-  // visual viewport). This listener fires after the keyboard is fully shown and manually
-  // scrolls the focused input/textarea above the keyboard.
+  // When the virtual keyboard opens on Android (adjustResize mode), the WebView shrinks.
+  // scrollIntoView with block:'nearest' on the focused element after the viewport settles
+  // is the most reliable way to keep the input visible.
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
 
+    let rafId: number
     const ensureFocusedVisible = () => {
-      const el = document.activeElement as HTMLElement | null
-      if (!el || !['INPUT', 'TEXTAREA'].includes(el.tagName)) return
-
-      const rect = el.getBoundingClientRect()
-      const visibleBottom = vv.offsetTop + vv.height
-      const PADDING = 16
-
-      if (rect.bottom > visibleBottom - PADDING) {
-        const overflow = rect.bottom - (visibleBottom - PADDING)
-        const scrollEl = mainRef.current
-        if (scrollEl) scrollEl.scrollTop += overflow
-      }
+      cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(() => {
+        const el = document.activeElement as HTMLElement | null
+        if (!el || !['INPUT', 'TEXTAREA'].includes(el.tagName)) return
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+      })
     }
 
     vv.addEventListener('resize', ensureFocusedVisible)
-    return () => vv.removeEventListener('resize', ensureFocusedVisible)
+    return () => {
+      vv.removeEventListener('resize', ensureFocusedVisible)
+      cancelAnimationFrame(rafId)
+    }
   }, [])
 
   const initials =
@@ -57,7 +54,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       .slice(0, 2) ?? '?'
 
   return (
-    <div className="min-h-screen flex bg-transparent">
+    <div className="h-screen overflow-hidden flex bg-transparent">
       {/* Sidebar */}
       <aside className="hidden md:flex w-64 flex-col border-r bg-card shrink-0">
         {/* Brand */}
@@ -117,7 +114,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <main ref={mainRef} className="flex-1 flex flex-col min-h-screen overflow-auto">
+      <main className="flex-1 flex flex-col overflow-hidden">
         {/* Status bar spacer — fills the notch/status bar area on mobile */}
         <div className="h-[env(safe-area-inset-top)] bg-card md:hidden" />
         {/* Mobile-only top bar */}
@@ -128,7 +125,10 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
           <ThemeToggle />
         </div>
-        <div className="flex-1 p-5 pb-24 md:pb-8 md:p-8">{children}</div>
+        {/* Scrollable content area — this is what actually scrolls on both desktop and mobile */}
+        <div ref={mainRef} className="flex-1 overflow-y-auto p-5 pb-24 md:pb-8 md:p-8">
+          {children}
+        </div>
       </main>
 
       <MobileNav unreadCount={unreadCount} />
