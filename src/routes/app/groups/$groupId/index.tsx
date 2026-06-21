@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, MessageCircle, Plus, Send, User, CalendarDays, X, ImagePlus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MessageCircle, Plus, Send, User, CalendarDays, X, ImagePlus, Flame, Bell, BellOff } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useGroup, useGroupMembers } from '@/features/groups/hooks/useGroups'
-import { useNotesByDate, useCreateNote, useCalendarSummary } from '@/features/notes/hooks/useNotes'
+import { useNotesByDate, useCreateNote, useCalendarSummary, useAdjacentDates, useStreak } from '@/features/notes/hooks/useNotes'
+import { usePushNotifications } from '@/features/notifications/hooks/usePushNotifications'
 import { useAutoMarkNotificationsRead } from '@/features/notifications/hooks/useNotifications'
 import { useAuthStore } from '@/store/auth.store'
 import { InviteDialog } from '@/features/groups/components/InviteDialog'
@@ -232,6 +233,9 @@ function DiaryPage() {
     viewMode === 'mine' ? user?.id :
     viewMode
   const { data: calendarCounts } = useCalendarSummary(groupId, calendarMonth, calendarAuthorId)
+  const { data: adjacent } = useAdjacentDates(groupId, date, calendarAuthorId)
+  const { data: streak } = useStreak(groupId, calendarAuthorId ?? user?.id)
+  const { state: pushState, subscribe: subscribePush } = usePushNotifications()
 
   useAutoMarkNotificationsRead(groupId, date)
 
@@ -254,18 +258,8 @@ function DiaryPage() {
   }, [search.noteId, isLoading, notes])
 
 
-  const prevDay = () => {
-    const d = new Date(date + 'T00:00:00')
-    d.setDate(d.getDate() - 1)
-    setDate(d.toISOString().split('T')[0])
-  }
-
-  const nextDay = () => {
-    const d = new Date(date + 'T00:00:00')
-    d.setDate(d.getDate() + 1)
-    const next = d.toISOString().split('T')[0]
-    if (next <= todayDateString()) setDate(next)
-  }
+  const prevDay = () => { if (adjacent?.prev) setDate(adjacent.prev) }
+  const nextDay = () => { if (adjacent?.next) setDate(adjacent.next) }
 
   const uploadFile = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) { toast.error('Only image files are supported'); return }
@@ -331,8 +325,22 @@ function DiaryPage() {
       <div className="flex items-center gap-3">
         <div className="flex-1 rounded-2xl bg-card/95 backdrop-blur-sm border px-4 py-3 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="text-base font-bold leading-none truncate">{group?.name ?? '…'}</h1>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-bold leading-none truncate">{group?.name ?? '…'}</h1>
+                {(streak?.current ?? 0) > 0 && (
+                  <span className={cn(
+                    'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold shrink-0',
+                    streak?.recoverable
+                      ? 'bg-orange-100 text-orange-500 dark:bg-orange-900/30'
+                      : 'bg-orange-500/15 text-orange-500',
+                  )}>
+                    <Flame className="size-3" />
+                    {streak!.current}
+                    {streak?.recoverable && <span className="ml-0.5 opacity-70">!</span>}
+                  </span>
+                )}
+              </div>
               <div className="relative mt-1.5">
                 <button
                   ref={dateButtonRef}
@@ -363,17 +371,26 @@ function DiaryPage() {
                 document.body,
               )}
             </div>
+            </div>
             <div className="flex items-center gap-1 shrink-0">
-              <Button variant="ghost" size="icon" className="size-7" onClick={prevDay}>
+              <Button variant="ghost" size="icon" className="size-7" onClick={prevDay} disabled={!adjacent?.prev}>
                 <ChevronLeft className="size-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" className="size-7" onClick={nextDay} disabled={isAtToday}>
+              <Button variant="ghost" size="icon" className="size-7" onClick={nextDay} disabled={!adjacent?.next}>
                 <ChevronRight className="size-3.5" />
               </Button>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          {pushState === 'unsubscribed' && (
+            <Button variant="ghost" size="icon" className="size-9" onClick={() => void subscribePush()} title="Enable push notifications">
+              <Bell className="size-4" />
+            </Button>
+          )}
+          {pushState === 'subscribed' && (
+            <Bell className="size-4 text-primary" />
+          )}
           <MembersSheet groupId={groupId} groupName={group?.name ?? ''} />
           <InviteDialog groupId={groupId} />
         </div>

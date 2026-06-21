@@ -35,4 +35,15 @@ export const notesApi = {
     if (authorId) params.set('author', authorId)
     return apiClient.get<Record<string, number>>(`/groups/${groupId}/notes/calendar?${params}`)
   },
+
+  adjacent: (groupId: string, date: string, authorId?: string) => {
+    const params = new URLSearchParams({ date })
+    if (authorId) params.set('author', authorId)
+    return apiClient.get<{ prev: string | null; next: string | null }>(`/groups/${groupId}/notes/adjacent?${params}`)
+  },
+
+  streak: (groupId: string, authorId?: string) => {
+    const params = authorId ? `?author=${authorId}` : ''
+    return apiClient.get<{ current: number; recoverable: boolean }>(`/groups/${groupId}/streak${params}`)
+  },
 }

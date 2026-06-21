@@ -55,3 +55,21 @@ export function useDeleteNote(groupId: string, date: string) {
     },
   })
 }
+
+export function useAdjacentDates(groupId: string, date: string, authorId?: string) {
+  return useQuery({
+    queryKey: [...noteKeys.all, 'adjacent', groupId, date, authorId ?? 'all'],
+    queryFn: () => notesApi.adjacent(groupId, date, authorId),
+    enabled: !!groupId && !!date,
+    staleTime: 30_000,
+  })
+}
+
+export function useStreak(groupId: string, authorId?: string) {
+  return useQuery({
+    queryKey: ['streak', groupId, authorId ?? 'me'],
+    queryFn: () => notesApi.streak(groupId, authorId),
+    enabled: !!groupId && !!authorId,
+    staleTime: 60_000,
+  })
+}
