@@ -101,6 +101,36 @@ class ApiClient {
   delete<T>(path: string, options?: RequestOptions) {
     return this.request<T>(path, { ...options, method: 'DELETE' })
   }
+
+  async postForm<T>(path: string, form: FormData): Promise<T> {
+    const headers: Record<string, string> = {}
+    if (isTauriRuntime()) headers['X-Friend-Diaries-Client'] = 'tauri'
+    if (this.accessToken) headers['Authorization'] = `Bearer ${this.accessToken}`
+
+    let response: Response
+    try {
+      response = await fetch(`${BASE_URL}${path}`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: form,
+      })
+    } catch {
+      throw new ApiError(0, 'Could not reach Friend Diaries.', `POST ${path}`)
+    }
+
+    if (!response.ok) {
+      let serverMessage: string | undefined
+      try {
+        const data = (await response.json()) as { error?: string; message?: string }
+        serverMessage = data.error ?? data.message
+      } catch { /* ignore */ }
+      throw new ApiError(response.status, getFriendlyErrorMessage(response.status, path, serverMessage), `POST ${path}`)
+    }
+
+    const json = (await response.json()) as { data: T }
+    return json.data
+  }
 }
 
 export const apiClient = new ApiClient()

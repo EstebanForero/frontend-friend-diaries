@@ -25,6 +25,12 @@ export interface GroupMember {
   joined_at: string | null
 }
 
+export interface NoteImage {
+  id: string
+  media_url: string
+  mime_type: string
+}
+
 export interface Note {
   id: string
   group_id: string
@@ -33,6 +39,7 @@ export interface Note {
   content: string
   is_edited: boolean
   is_deleted: boolean
+  images: NoteImage[]
   created_at: string
   updated_at: string
 }

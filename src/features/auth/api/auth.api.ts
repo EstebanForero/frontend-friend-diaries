@@ -5,6 +5,7 @@ export interface RegisterPayload {
   email: string
   password: string
   display_name: string
+  consent_given: boolean
 }
 
 export interface LoginPayload {

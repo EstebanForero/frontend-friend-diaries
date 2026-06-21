@@ -4,6 +4,7 @@ import type { Note } from '@/types'
 export interface CreateNotePayload {
   content: string
   date?: string
+  image_ids?: string[]
 }
 
 export interface UpdateNotePayload {

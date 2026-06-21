@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, MessageCircle, Plus, Send, User, CalendarDays, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight, MessageCircle, Plus, Send, User, CalendarDays, X, ImagePlus } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -15,9 +15,17 @@ import { MembersSheet } from '@/features/groups/components/MembersSheet'
 import { formatDate, formatTime, formatTimeInZone, isToday, todayDateString } from '@/lib/utils'
 import { useCreateReply, useReplies } from '@/features/replies/hooks/useReplies'
 import { useReactions, useRemoveReaction, useUpsertReaction } from '@/features/reactions/hooks/useReactions'
+import { mediaApi } from '@/features/media/api/media.api'
 import { cn } from '@/lib/utils'
-import type { GroupMemberDetail, Note, ReactionType } from '@/types'
+import type { GroupMemberDetail, Note, NoteImage, ReactionType } from '@/types'
 import { DEFAULT_REACTION_EMOJIS, reactionEmoji } from '@/types'
+
+interface PendingImage {
+  localUrl: string
+  uploadedId?: string
+  uploading: boolean
+  error?: boolean
+}
 
 export const Route = createFileRoute('/app/groups/$groupId/')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -195,9 +203,11 @@ function DiaryPage() {
   const { user } = useAuthStore()
   const [date, setDate] = useState(search.date ?? todayDateString())
   const [content, setContent] = useState('')
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([])
   const [viewMode, setViewMode] = useState<ViewMode>('mine')
   const [showCalendar, setShowCalendar] = useState(false)
   const dateButtonRef = useRef<HTMLButtonElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [calendarPos, setCalendarPos] = useState({ top: 0, left: 0 })
 
   useEffect(() => {
@@ -257,11 +267,61 @@ function DiaryPage() {
     if (next <= todayDateString()) setDate(next)
   }
 
+  const uploadFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) { toast.error('Only image files are supported'); return }
+    if (file.size > 10 * 1024 * 1024) { toast.error('Image must be under 10 MB'); return }
+
+    const localUrl = URL.createObjectURL(file)
+    const placeholder: PendingImage = { localUrl, uploading: true }
+    setPendingImages((prev) => [...prev, placeholder])
+
+    try {
+      const { id } = await mediaApi.upload(file)
+      setPendingImages((prev) =>
+        prev.map((p) => (p.localUrl === localUrl ? { ...p, uploading: false, uploadedId: id } : p)),
+      )
+    } catch {
+      URL.revokeObjectURL(localUrl)
+      setPendingImages((prev) => prev.filter((p) => p.localUrl !== localUrl))
+      toast.error('Failed to upload image')
+    }
+  }, [])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    files.forEach(uploadFile)
+    e.target.value = ''
+  }
+
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const imageFile = Array.from(e.clipboardData.items)
+      .find((item) => item.type.startsWith('image/'))
+      ?.getAsFile()
+    if (imageFile) {
+      e.preventDefault()
+      void uploadFile(imageFile)
+    }
+  }, [uploadFile])
+
+  const removePending = (localUrl: string) => {
+    URL.revokeObjectURL(localUrl)
+    setPendingImages((prev) => prev.filter((p) => p.localUrl !== localUrl))
+  }
+
   const handleSubmit = () => {
-    if (!content.trim()) return
+    const imageIds = pendingImages.filter((p) => p.uploadedId).map((p) => p.uploadedId!)
+    if (!content.trim() && imageIds.length === 0) return
+    if (pendingImages.some((p) => p.uploading)) { toast.info('Images are still uploading…'); return }
     createNote(
-      { content: content.trim(), date },
-      { onSuccess: () => setContent(''), onError: (err) => toast.error(err.message) },
+      { content: content.trim(), date, image_ids: imageIds.length > 0 ? imageIds : undefined },
+      {
+        onSuccess: () => {
+          setContent('')
+          pendingImages.forEach((p) => URL.revokeObjectURL(p.localUrl))
+          setPendingImages([])
+        },
+        onError: (err) => toast.error(err.message),
+      },
     )
   }
 
@@ -413,6 +473,14 @@ function DiaryPage() {
       {/* Write box */}
       {canWrite && (
         <div className="rounded-2xl border bg-card/90 backdrop-blur-sm shadow-sm overflow-hidden">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleFileChange}
+          />
           <Textarea
             placeholder="What's on your mind today?"
             value={content}
@@ -420,14 +488,53 @@ function DiaryPage() {
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit()
             }}
+            onPaste={handlePaste}
             className="resize-none min-h-[120px] border-0 focus-visible:ring-0 rounded-none px-5 pt-4 pb-2 text-sm leading-relaxed bg-transparent"
             onFocus={(e) => e.currentTarget.closest('.rounded-2xl')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}
           />
+          {pendingImages.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-5 pb-3">
+              {pendingImages.map((img) => (
+                <div key={img.localUrl} className="relative size-20 shrink-0 rounded-lg overflow-hidden border bg-muted">
+                  <img src={img.localUrl} alt="" className="size-full object-cover" />
+                  {img.uploading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    </div>
+                  )}
+                  {!img.uploading && (
+                    <button
+                      type="button"
+                      onClick={() => removePending(img.localUrl)}
+                      className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30">
-            <p className="text-xs text-muted-foreground">
-              <kbd className="font-mono">⌘ Enter</kbd> to post
-            </p>
-            <Button size="sm" onClick={handleSubmit} disabled={!content.trim() || isCreating} className="gap-1.5">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ImagePlus className="size-4" />
+                <span className="hidden sm:inline">Photo</span>
+              </button>
+              <p className="text-xs text-muted-foreground hidden sm:block">
+                · <kbd className="font-mono">⌘ Enter</kbd> to post
+              </p>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={(!content.trim() && pendingImages.length === 0) || isCreating || pendingImages.some((p) => p.uploading)}
+              className="gap-1.5"
+            >
               <Send className="size-3.5" />
               {isCreating ? 'Posting…' : 'Post'}
             </Button>
@@ -435,6 +542,68 @@ function DiaryPage() {
         </div>
       )}
     </div>
+  )
+}
+
+function NoteImageGrid({ images }: { images: NoteImage[] }) {
+  const [lightbox, setLightbox] = useState<string | null>(null)
+
+  if (!images.length) return null
+
+  const gridClass =
+    images.length === 1 ? 'grid-cols-1' :
+    images.length === 2 ? 'grid-cols-2' :
+    images.length >= 3 ? 'grid-cols-3' : ''
+
+  return (
+    <>
+      <div className={cn('grid gap-1 rounded-lg overflow-hidden', gridClass)}>
+        {images.slice(0, 6).map((img, i) => {
+          const isExtraOverlay = images.length > 6 && i === 5
+          return (
+            <button
+              key={img.id}
+              type="button"
+              onClick={() => setLightbox(img.media_url)}
+              className="relative aspect-square overflow-hidden bg-muted focus:outline-none"
+            >
+              <img
+                src={img.media_url}
+                alt=""
+                className="size-full object-cover transition-transform hover:scale-105"
+              />
+              {isExtraOverlay && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white font-bold text-xl">
+                  +{images.length - 5}
+                </div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {lightbox && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightbox(null)}
+            className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+          >
+            <X className="size-5" />
+          </button>
+          <img
+            src={lightbox}
+            alt=""
+            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>,
+        document.body,
+      )}
+    </>
   )
 }
 
@@ -513,9 +682,15 @@ function NoteCard({
             {note.is_edited && <span className="text-[10px] italic text-muted-foreground">edited</span>}
           </div>
 
-          <p className={cn('whitespace-pre-wrap text-sm leading-relaxed', note.is_deleted && 'italic text-muted-foreground')}>
-            {note.content}
-          </p>
+          {note.content && (
+            <p className={cn('whitespace-pre-wrap text-sm leading-relaxed', note.is_deleted && 'italic text-muted-foreground')}>
+              {note.content}
+            </p>
+          )}
+
+          {(note.images?.length ?? 0) > 0 && (
+            <NoteImageGrid images={note.images} />
+          )}
 
           <div className="flex flex-wrap items-center gap-1.5">
             {Object.entries(reactionCounts).map(([rt, count]) => {
