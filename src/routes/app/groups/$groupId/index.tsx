@@ -546,60 +546,153 @@ function DiaryPage() {
 }
 
 function NoteImageGrid({ images }: { images: NoteImage[] }) {
-  const [lightbox, setLightbox] = useState<string | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (lightboxIndex === null) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxIndex(null)
+      if (e.key === 'ArrowLeft') setLightboxIndex((i) => i !== null ? (i - 1 + images.length) % images.length : null)
+      if (e.key === 'ArrowRight') setLightboxIndex((i) => i !== null ? (i + 1) % images.length : null)
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [lightboxIndex, images.length])
 
   if (!images.length) return null
 
-  const gridClass =
-    images.length === 1 ? 'grid-cols-1' :
-    images.length === 2 ? 'grid-cols-2' :
-    images.length >= 3 ? 'grid-cols-3' : ''
+  const open = (i: number) => setLightboxIndex(i)
+  const close = () => setLightboxIndex(null)
+  const prev = (e: React.MouseEvent) => { e.stopPropagation(); setLightboxIndex((i) => i !== null ? (i - 1 + images.length) % images.length : null) }
+  const next = (e: React.MouseEvent) => { e.stopPropagation(); setLightboxIndex((i) => i !== null ? (i + 1) % images.length : null) }
+
+  const n = images.length
+  const MAX_SHOWN = 4
+  const shown = images.slice(0, MAX_SHOWN)
+  const overflow = n - MAX_SHOWN
+
+  const imgBtn = (img: NoteImage, i: number, cls: string, showOverlay = false) => (
+    <button
+      key={img.id}
+      type="button"
+      onClick={() => open(i)}
+      className={cn('relative overflow-hidden bg-muted focus:outline-none group', cls)}
+    >
+      <img src={img.media_url} alt="" className="size-full object-cover transition-transform duration-200 group-hover:scale-105" />
+      {showOverlay && overflow > 0 && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/55 text-white font-bold text-2xl select-none">
+          +{overflow + 1}
+        </div>
+      )}
+    </button>
+  )
+
+  let grid: React.ReactNode
+  if (n === 1) {
+    grid = (
+      <button type="button" onClick={() => open(0)} className="group w-full overflow-hidden rounded-xl focus:outline-none">
+        <img
+          src={images[0].media_url}
+          alt=""
+          className="w-full max-h-72 object-contain rounded-xl bg-muted transition-opacity group-hover:opacity-95"
+        />
+      </button>
+    )
+  } else if (n === 2) {
+    grid = (
+      <div className="grid grid-cols-2 gap-0.5 rounded-xl overflow-hidden h-44">
+        {shown.map((img, i) => imgBtn(img, i, 'w-full h-full'))}
+      </div>
+    )
+  } else if (n === 3) {
+    grid = (
+      <div className="grid grid-cols-2 gap-0.5 rounded-xl overflow-hidden h-52">
+        {imgBtn(images[0], 0, 'row-span-2 h-full')}
+        {imgBtn(images[1], 1, 'h-full')}
+        {imgBtn(images[2], 2, 'h-full')}
+      </div>
+    )
+  } else {
+    grid = (
+      <div className="grid grid-cols-2 gap-0.5 rounded-xl overflow-hidden h-52">
+        {shown.map((img, i) => imgBtn(img, i, 'h-full', i === MAX_SHOWN - 1))}
+      </div>
+    )
+  }
 
   return (
     <>
-      <div className={cn('grid gap-1 rounded-lg overflow-hidden', gridClass)}>
-        {images.slice(0, 6).map((img, i) => {
-          const isExtraOverlay = images.length > 6 && i === 5
-          return (
-            <button
-              key={img.id}
-              type="button"
-              onClick={() => setLightbox(img.media_url)}
-              className="relative aspect-square overflow-hidden bg-muted focus:outline-none"
-            >
-              <img
-                src={img.media_url}
-                alt=""
-                className="size-full object-cover transition-transform hover:scale-105"
-              />
-              {isExtraOverlay && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white font-bold text-xl">
-                  +{images.length - 5}
-                </div>
-              )}
-            </button>
-          )
-        })}
-      </div>
+      {grid}
 
-      {lightbox && createPortal(
+      {lightboxIndex !== null && createPortal(
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm"
-          onClick={() => setLightbox(null)}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-sm"
+          onClick={close}
         >
+          {/* Close */}
           <button
             type="button"
-            onClick={() => setLightbox(null)}
+            onClick={close}
             className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
           >
             <X className="size-5" />
           </button>
+
+          {/* Counter */}
+          {images.length > 1 && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 rounded-full bg-black/40 px-3 py-1 text-sm text-white tabular-nums">
+              {lightboxIndex + 1} / {images.length}
+            </div>
+          )}
+
+          {/* Prev */}
+          {images.length > 1 && (
+            <button
+              type="button"
+              onClick={prev}
+              className="absolute left-3 flex size-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+            >
+              <ChevronLeft className="size-6" />
+            </button>
+          )}
+
+          {/* Image */}
           <img
-            src={lightbox}
+            src={images[lightboxIndex].media_url}
             alt=""
-            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+            className="max-h-[88vh] max-w-[88vw] rounded-lg object-contain select-none"
             onClick={(e) => e.stopPropagation()}
           />
+
+          {/* Next */}
+          {images.length > 1 && (
+            <button
+              type="button"
+              onClick={next}
+              className="absolute right-3 flex size-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+            >
+              <ChevronRight className="size-6" />
+            </button>
+          )}
+
+          {/* Thumbnail strip */}
+          {images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+              {images.map((img, i) => (
+                <button
+                  key={img.id}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setLightboxIndex(i) }}
+                  className={cn(
+                    'size-10 overflow-hidden rounded-md border-2 transition-all',
+                    i === lightboxIndex ? 'border-white scale-110' : 'border-transparent opacity-60 hover:opacity-90',
+                  )}
+                >
+                  <img src={img.media_url} alt="" className="size-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>,
         document.body,
       )}
