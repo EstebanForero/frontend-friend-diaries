@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, MessageCircle, Plus, Send, User, CalendarDays, X, ImagePlus, Flame, Bell, Download, RefreshCw, Share2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MessageCircle, Plus, Send, User, CalendarDays, X, ImagePlus, Flame, Download, RefreshCw, Share2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useGroup, useGroupMembers } from '@/features/groups/hooks/useGroups'
 import { useNotesByDate, useCreateNote, useCalendarSummary, useAdjacentDates, useStreak } from '@/features/notes/hooks/useNotes'
-import { usePushNotifications } from '@/features/notifications/hooks/usePushNotifications'
 import { useAutoMarkNotificationsRead } from '@/features/notifications/hooks/useNotifications'
 import { useAuthStore } from '@/store/auth.store'
 import { InviteDialog } from '@/features/groups/components/InviteDialog'
@@ -248,7 +247,7 @@ function DiaryPage() {
   const { data: calendarCounts } = useCalendarSummary(groupId, calendarMonth, calendarAuthorId)
   const { data: adjacent } = useAdjacentDates(groupId, date, calendarAuthorId)
   const { data: streak } = useStreak(groupId, calendarAuthorId ?? user?.id)
-  const { state: pushState, subscribe: subscribePush } = usePushNotifications()
+
 
   // Pull-to-refresh
   const pullStartY = useRef<number | null>(null)
@@ -436,14 +435,6 @@ function DiaryPage() {
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {pushState === 'unsubscribed' && (
-            <Button variant="ghost" size="icon" className="size-9" onClick={() => void subscribePush()} title="Enable push notifications">
-              <Bell className="size-4" />
-            </Button>
-          )}
-          {pushState === 'subscribed' && (
-            <Bell className="size-4 text-primary" />
-          )}
           <MembersSheet groupId={groupId} groupName={group?.name ?? ''} />
           <InviteDialog groupId={groupId} />
         </div>

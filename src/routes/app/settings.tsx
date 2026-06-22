@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Image, Palette, RotateCcw, Type, Upload, X } from 'lucide-react'
+import { Bell, BellOff, Image, Palette, RotateCcw, Type, Upload, X } from 'lucide-react'
 import { useRef } from 'react'
 import { useAuthStore } from '@/store/auth.store'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -15,6 +15,7 @@ import {
   type FontChoice,
   useAppearance,
 } from '@/hooks/useAppearance'
+import { usePushNotifications } from '@/features/notifications/hooks/usePushNotifications'
 import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/app/settings')({
@@ -24,6 +25,7 @@ export const Route = createFileRoute('/app/settings')({
 function SettingsPage() {
   const { user } = useAuthStore()
   const { settings, setAppearance, resetAppearance } = useAppearance()
+  const { state: pushState, subscribe: subscribePush, unsubscribe: unsubscribePush } = usePushNotifications()
   const backgroundInputRef = useRef<HTMLInputElement>(null)
   const fontInputRef = useRef<HTMLInputElement>(null)
 
@@ -79,6 +81,46 @@ function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {pushState !== 'unsupported' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="size-4 text-primary" />
+              Notifications
+            </CardTitle>
+            <CardDescription>Get notified when your partner writes in the diary.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">
+                  {pushState === 'subscribed' ? 'Notifications enabled' : pushState === 'denied' ? 'Notifications blocked' : 'Notifications disabled'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {pushState === 'denied'
+                    ? 'Allow notifications in your browser/device settings to enable this.'
+                    : pushState === 'subscribed'
+                    ? 'You will receive notifications for new diary entries.'
+                    : 'Enable to get notified when someone writes in your shared diary.'}
+                </p>
+              </div>
+              {pushState === 'unsubscribed' && (
+                <Button size="sm" onClick={() => void subscribePush()}>
+                  <Bell className="size-4" />
+                  Enable
+                </Button>
+              )}
+              {pushState === 'subscribed' && (
+                <Button size="sm" variant="outline" onClick={() => void unsubscribePush()}>
+                  <BellOff className="size-4" />
+                  Disable
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
