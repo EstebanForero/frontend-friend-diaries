@@ -74,6 +74,8 @@ self.addEventListener('notificationclick', (event) => {
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
+          // Tell the app to invalidate notes before navigating so fresh data loads
+          client.postMessage({ type: 'PUSH_NOTIFICATION_CLICK', url })
           client.navigate(url)
           return client.focus()
         }

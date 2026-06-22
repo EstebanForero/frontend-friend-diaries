@@ -13,7 +13,7 @@ import { useAutoMarkNotificationsRead } from '@/features/notifications/hooks/use
 import { useAuthStore } from '@/store/auth.store'
 import { InviteDialog } from '@/features/groups/components/InviteDialog'
 import { MembersSheet } from '@/features/groups/components/MembersSheet'
-import { formatDate, formatTime, formatTimeInZone, isToday, todayDateString, resolveMediaUrl } from '@/lib/utils'
+import { formatDate, formatTime, formatTimeInZone, todayDateString, todayInZone, resolveMediaUrl } from '@/lib/utils'
 import { useCreateReply, useReplies } from '@/features/replies/hooks/useReplies'
 import { useReactions, useRemoveReaction, useUpsertReaction } from '@/features/reactions/hooks/useReactions'
 import { mediaApi } from '@/features/media/api/media.api'
@@ -47,13 +47,14 @@ function CalendarPicker({
   onChange,
   onClose,
   counts = {},
+  today = todayDateString(),
 }: {
   value: string
   onChange: (date: string) => void
   onClose: () => void
   counts?: Record<string, number>
+  today?: string
 }) {
-  const today = todayDateString()
   const [month, setMonth] = useState(() => {
     const d = new Date(value + 'T00:00:00')
     return { year: d.getFullYear(), month: d.getMonth() }
@@ -224,6 +225,18 @@ function DiaryPage() {
 
   const { data: group } = useGroup(groupId)
   const { data: members } = useGroupMembers(groupId)
+
+  // "Today" in the diary's timezone — may differ from the user's local date
+  const diaryToday = todayInZone(group?.timezone)
+
+  // Once the group timezone is known and no date was specified in the URL,
+  // snap the default date to "today in the diary's timezone"
+  useEffect(() => {
+    if (group?.timezone && !search.date) {
+      setDate(todayInZone(group.timezone))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [group?.timezone])
   const { data: notes, isLoading, refetch: refetchNotes } = useNotesByDate(groupId, date)
   const { mutate: createNote, isPending: isCreating } = useCreateNote(groupId, date)
 
@@ -263,7 +276,7 @@ function DiaryPage() {
 
   useAutoMarkNotificationsRead(groupId, date)
 
-  const canWrite = isToday(date)
+  const canWrite = date === diaryToday
 
   const visibleNotes = (notes ?? []).filter((n) =>
     viewMode === 'mine' ? n.author_id === user?.id :
@@ -406,6 +419,7 @@ function DiaryPage() {
                     onChange={(d) => { setDate(d); setShowCalendar(false) }}
                     onClose={() => setShowCalendar(false)}
                     counts={calendarCounts ?? {}}
+                    today={diaryToday}
                   />
                 </div>,
                 document.body,
@@ -1017,7 +1031,7 @@ function NoteCard({
                   <MessageCircle className="size-3.5" />
                   Comment
                 </button>
-                {typeof navigator !== 'undefined' && 'share' in navigator && (
+                {navigator.maxTouchPoints > 0 && (
                   <button
                     type="button"
                     onClick={() => void shareNote()}

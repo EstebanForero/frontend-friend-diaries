@@ -57,6 +57,22 @@ export function todayDateString(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+export function todayInZone(timezone?: string): string {
+  if (!timezone) return todayDateString()
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date())
+    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
+    return `${get('year')}-${get('month')}-${get('day')}`
+  } catch {
+    return todayDateString()
+  }
+}
+
 export function isToday(dateStr: string): boolean {
   return dateStr === todayDateString()
 }

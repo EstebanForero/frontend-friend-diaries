@@ -22,7 +22,15 @@ export function usePushNotifications() {
   }, [])
 
   const subscribe = useCallback(async () => {
-    if (!('serviceWorker' in navigator)) return
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+
+    // Explicitly request permission first so the browser prompt is clearly
+    // triggered by the user gesture (required on some browsers/WebViews)
+    const permission = await Notification.requestPermission()
+    if (permission !== 'granted') {
+      setState('denied')
+      return
+    }
 
     const { key } = await pushApi.getVapidKey()
     if (!key) return
@@ -35,8 +43,8 @@ export function usePushNotifications() {
       applicationServerKey: urlBase64ToUint8Array(key).buffer as ArrayBuffer,
     })
 
-    setState('subscribed')
     await pushApi.subscribe(sub.toJSON())
+    setState('subscribed')
   }, [])
 
   const unsubscribe = useCallback(async () => {

@@ -16,6 +16,14 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {
     // SW registration failure is non-fatal
   })
+
+  // When the user clicks a push notification, the SW sends this message before
+  // navigating so the app can clear stale cached notes.
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type === 'PUSH_NOTIFICATION_CLICK') {
+      void queryClient.invalidateQueries({ queryKey: ['notes'] })
+    }
+  })
 }
 
 const router = createRouter({

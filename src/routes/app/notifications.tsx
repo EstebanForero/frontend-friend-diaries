@@ -112,6 +112,12 @@ function NotificationRow({
       onClick={() => {
         if (!n.is_read) onRead()
         if (targetGroupId) {
+          // Force-refresh notes so the diary page shows the latest after navigating
+          void qc.invalidateQueries({
+            queryKey: targetDate
+              ? ['notes', targetGroupId, targetDate]
+              : ['notes', targetGroupId],
+          })
           void router.navigate({
             to: '/app/groups/$groupId',
             params: { groupId: targetGroupId },
