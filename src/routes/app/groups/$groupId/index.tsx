@@ -341,7 +341,7 @@ function MemoryBookPage() {
   const [calendarMonth, setCalendarMonth] = useState(() => date.slice(0, 7))
   const calendarAuthorId = viewMode === 'all' ? undefined : viewMode === 'mine' ? user?.id : viewMode
   const { data: calendarCounts } = useCalendarSummary(groupId, calendarMonth, calendarAuthorId)
-  const { data: adjacent } = useAdjacentDates(groupId, date, calendarAuthorId)
+  const { data: adjacent, isPending: isAdjacentPending } = useAdjacentDates(groupId, date, calendarAuthorId)
   const { data: streak } = useStreak(groupId, calendarAuthorId ?? user?.id)
 
   // Pull-to-refresh
@@ -392,8 +392,9 @@ function MemoryBookPage() {
   const prevDay = () => {
     if (adjacent?.prev) setDate(adjacent.prev)
   }
+  const nextAvailableDate = isAdjacentPending ? null : (adjacent?.next ?? (date < diaryToday ? diaryToday : null))
   const nextDay = () => {
-    if (adjacent?.next) setDate(adjacent.next)
+    if (nextAvailableDate) setDate(nextAvailableDate)
   }
 
   const openRecentMemory = (note: Note) => {
@@ -598,7 +599,15 @@ function MemoryBookPage() {
                 <Button variant="ghost" size="icon" className="size-7" onClick={prevDay} disabled={!adjacent?.prev}>
                   <ChevronLeft className="size-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="size-7" onClick={nextDay} disabled={!adjacent?.next}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  onClick={nextDay}
+                  disabled={!nextAvailableDate}
+                  aria-label={adjacent?.next ? 'Next memory date' : 'Go to today'}
+                  title={adjacent?.next ? 'Next memory date' : 'Go to today'}
+                >
                   <ChevronRight className="size-3.5" />
                 </Button>
               </div>
