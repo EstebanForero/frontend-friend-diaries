@@ -33,6 +33,17 @@ export function useCreateGroup() {
   })
 }
 
+export function useUpdateGroup(groupId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateGroupPayload) => groupsApi.update(groupId, payload),
+    onSuccess: (group) => {
+      qc.setQueryData(groupKeys.detail(groupId), group)
+      void qc.invalidateQueries({ queryKey: groupKeys.lists() })
+    },
+  })
+}
+
 export function useInviteMember(groupId: string) {
   return useMutation({
     mutationFn: (payload: InvitePayload) => groupsApi.invite(groupId, payload),

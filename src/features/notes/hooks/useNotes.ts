@@ -4,8 +4,18 @@ import { notesApi, type CreateNotePayload, type UpdateNotePayload } from '../api
 export const noteKeys = {
   all: ['notes'] as const,
   byDate: (groupId: string, date: string) => [...noteKeys.all, groupId, date] as const,
+  recent: (groupId: string) => [...noteKeys.all, 'recent', groupId] as const,
   calendar: (groupId: string, month: string, authorId?: string) =>
     [...noteKeys.all, 'calendar', groupId, month, authorId ?? 'all'] as const,
+}
+
+export function useRecentNotes(groupId: string) {
+  return useQuery({
+    queryKey: noteKeys.recent(groupId),
+    queryFn: () => notesApi.recent(groupId),
+    enabled: !!groupId,
+    staleTime: 30_000,
+  })
 }
 
 export function useNotesByDate(groupId: string, date: string) {
@@ -22,6 +32,7 @@ export function useCreateNote(groupId: string, date: string) {
     mutationFn: (payload: CreateNotePayload) => notesApi.create(groupId, payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: noteKeys.byDate(groupId, date) })
+      void qc.invalidateQueries({ queryKey: noteKeys.recent(groupId) })
     },
   })
 }
@@ -33,6 +44,7 @@ export function useUpdateNote(groupId: string, date: string) {
       notesApi.update(noteId, payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: noteKeys.byDate(groupId, date) })
+      void qc.invalidateQueries({ queryKey: noteKeys.recent(groupId) })
     },
   })
 }
@@ -52,6 +64,7 @@ export function useDeleteNote(groupId: string, date: string) {
     mutationFn: (noteId: string) => notesApi.delete(noteId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: noteKeys.byDate(groupId, date) })
+      void qc.invalidateQueries({ queryKey: noteKeys.recent(groupId) })
     },
   })
 }

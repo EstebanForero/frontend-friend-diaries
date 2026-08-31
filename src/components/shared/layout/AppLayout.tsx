@@ -69,10 +69,10 @@ export function AppLayout({ children }: AppLayoutProps) {
         {/* Nav */}
         <nav className="flex flex-col gap-0.5 p-3 flex-1">
           <p className="px-3 py-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-            Your space
+            Shared memories
           </p>
-          <NavLink to="/app/groups" icon={<BookOpen className="size-4" />} label="Diaries" />
-          <NavLink to="/app/friends" icon={<Users className="size-4" />} label="Friends" />
+          <NavLink to="/app/groups" icon={<BookOpen className="size-4" />} label="Memory Books" />
+          <NavLink to="/app/friends" icon={<Users className="size-4" />} label="People" />
           <NavLink
             to="/app/notifications"
             icon={<Bell className="size-4" />}
@@ -90,15 +90,11 @@ export function AppLayout({ children }: AppLayoutProps) {
         <div className="p-3 border-t">
           <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-accent/50">
             <Avatar className="size-8 ring-2 ring-primary/20">
-              <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                {initials}
-              </AvatarFallback>
+              <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate leading-none">{user?.display_name}</p>
-              {user?.app_id && (
-                <CopyableId id={user.app_id} className="text-xs mt-0.5 -ml-1.5" />
-              )}
+              {user?.app_id && <CopyableId id={user.app_id} className="text-xs mt-0.5 -ml-1.5" />}
             </div>
             <Button
               variant="ghost"

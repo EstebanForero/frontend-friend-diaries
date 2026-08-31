@@ -11,8 +11,22 @@ export interface Group {
   name: string
   owner_id: string
   timezone: string
+  kind: MemoryBookKind
+  emoji: string
+  color: MemoryBookColor
   created_at: string
 }
+
+export type MemoryBookKind =
+  | 'everyday'
+  | 'best-friends'
+  | 'family'
+  | 'long-distance'
+  | 'partner'
+  | 'adventure'
+  | 'memory-book'
+
+export type MemoryBookColor = 'rose' | 'amber' | 'emerald' | 'sky' | 'violet' | 'slate'
 
 export type MemberRole = 'owner' | 'member'
 export type InvitationStatus = 'pending' | 'accepted' | 'declined'
@@ -25,10 +39,12 @@ export interface GroupMember {
   joined_at: string | null
 }
 
-export interface NoteImage {
+export interface NoteMedia {
   id: string
   media_url: string
   mime_type: string
+  media_kind: 'image' | 'video'
+  duration_seconds?: number
 }
 
 export interface Note {
@@ -39,7 +55,7 @@ export interface Note {
   content: string
   is_edited: boolean
   is_deleted: boolean
-  images: NoteImage[]
+  media: NoteMedia[]
   created_at: string
   updated_at: string
 }
@@ -80,12 +96,7 @@ export interface Reply {
   updated_at: string
 }
 
-export type NotificationType =
-  | 'new_note'
-  | 'reaction'
-  | 'reply'
-  | 'group_invitation'
-  | 'invitation_accepted'
+export type NotificationType = 'new_note' | 'reaction' | 'reply' | 'group_invitation' | 'invitation_accepted'
 
 export type RefType = 'note' | 'group' | 'reply'
 

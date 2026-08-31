@@ -8,8 +8,8 @@ export function MobileNav({ unreadCount = 0 }: { unreadCount?: number }) {
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="flex items-center justify-around px-2 py-1">
-        <MobileNavItem to="/app/groups" icon={<BookOpen className="size-5" />} label="Diaries" />
-        <MobileNavItem to="/app/friends" icon={<Users className="size-5" />} label="Friends" />
+        <MobileNavItem to="/app/groups" icon={<BookOpen className="size-5" />} label="Books" />
+        <MobileNavItem to="/app/friends" icon={<Users className="size-5" />} label="People" />
         <MobileNavItem
           to="/app/notifications"
           icon={<Bell className="size-5" />}

@@ -21,11 +21,11 @@ export const Route = createFileRoute('/app/notifications')({
 })
 
 const NOTIFICATION_COPY: Record<string, string> = {
-  new_note: 'wrote a new note in your diary',
+  new_note: 'added a new memory to your book',
   reaction: 'reacted to your note',
   reply: 'replied to your note',
-  group_invitation: 'invited you to a diary',
-  invitation_accepted: 'accepted your diary invitation',
+  group_invitation: 'invited you to a Memory Book',
+  invitation_accepted: 'accepted your Memory Book invitation',
 }
 
 function NotificationsPage() {
@@ -38,9 +38,7 @@ function NotificationsPage() {
       <div className="rounded-2xl bg-card/95 backdrop-blur-sm border px-4 py-3 shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-bold">Notifications</h1>
-          {(data?.unread_count ?? 0) > 0 && (
-            <Badge>{data?.unread_count}</Badge>
-          )}
+          {(data?.unread_count ?? 0) > 0 && <Badge>{data?.unread_count}</Badge>}
         </div>
         {(data?.unread_count ?? 0) > 0 && (
           <Button variant="outline" size="sm" onClick={() => markAllRead()}>
@@ -57,11 +55,7 @@ function NotificationsPage() {
       ) : (
         <div className="space-y-2">
           {data?.notifications.map((n) => (
-            <NotificationRow
-              key={n.id}
-              notification={n}
-              onRead={() => markRead(n.id)}
-            />
+            <NotificationRow key={n.id} notification={n} onRead={() => markRead(n.id)} />
           ))}
         </div>
       )}
@@ -69,13 +63,7 @@ function NotificationsPage() {
   )
 }
 
-function NotificationRow({
-  notification: n,
-  onRead,
-}: {
-  notification: Notification
-  onRead: () => void
-}) {
+function NotificationRow({ notification: n, onRead }: { notification: Notification; onRead: () => void }) {
   const qc = useQueryClient()
   const router = useRouter()
   const { mutate: accept, isPending: accepting } = useAcceptInvitation()
@@ -114,9 +102,7 @@ function NotificationRow({
         if (targetGroupId) {
           // Force-refresh notes so the diary page shows the latest after navigating
           void qc.invalidateQueries({
-            queryKey: targetDate
-              ? ['notes', targetGroupId, targetDate]
-              : ['notes', targetGroupId],
+            queryKey: targetDate ? ['notes', targetGroupId, targetDate] : ['notes', targetGroupId],
           })
           void router.navigate({
             to: '/app/groups/$groupId',
@@ -147,14 +133,11 @@ function NotificationRow({
         </Avatar>
         <div className="flex-1 min-w-0 space-y-0.5">
           <p className="text-sm">
-            <span className="font-semibold">{actorName}</span>{' '}
-            {NOTIFICATION_COPY[n.type] ?? n.type}
+            <span className="font-semibold">{actorName}</span> {NOTIFICATION_COPY[n.type] ?? n.type}
           </p>
           <p className="text-xs text-muted-foreground">{formatRelativeTime(n.created_at)}</p>
         </div>
-        {!n.is_read && (
-          <div className="size-2 rounded-full bg-primary shrink-0 mt-1.5" />
-        )}
+        {!n.is_read && <div className="size-2 rounded-full bg-primary shrink-0 mt-1.5" />}
       </div>
 
       {/* Inline accept/decline for diary invitations */}
@@ -168,7 +151,7 @@ function NotificationRow({
               e.stopPropagation()
               accept(n.reference_id, {
                 onSuccess: () => {
-                  toast.success('You joined the diary!')
+                  toast.success('You joined the Memory Book!')
                   void qc.invalidateQueries({ queryKey: notificationKeys.all })
                   onRead()
                 },

@@ -23,7 +23,11 @@ export const Route = createFileRoute('/login')({
 
 function LoginPage() {
   const { mutate: login, isPending } = useLogin()
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
 
@@ -32,7 +36,7 @@ function LoginPage() {
   }
 
   return (
-    <AuthLayout title="Welcome back" description="Sign in to continue your diary">
+    <AuthLayout title="Welcome back" description="Sign in to continue your Memory Books">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
@@ -43,10 +47,7 @@ function LoginPage() {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
-            <Link
-              to="/forgot-password"
-              className="text-xs text-muted-foreground hover:text-primary transition-colors"
-            >
+            <Link to="/forgot-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
               Forgot password?
             </Link>
           </div>

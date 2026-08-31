@@ -20,7 +20,7 @@ export function AddFriendDialog({ trigger }: AddFriendDialogProps) {
     if (!appId.trim()) return
     sendRequest(appId.trim(), {
       onSuccess: () => {
-        toast.success('Friend request sent!')
+        toast.success('Connection request sent!')
         setAppId('')
         setOpen(false)
       },
@@ -34,7 +34,7 @@ export function AddFriendDialog({ trigger }: AddFriendDialogProps) {
         {trigger ?? (
           <Button className="gap-1.5">
             <UserPlus className="size-4" />
-            Add friend
+            Add person
           </Button>
         )}
       </Dialog.Trigger>
@@ -44,9 +44,9 @@ export function AddFriendDialog({ trigger }: AddFriendDialogProps) {
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 bg-card border rounded-2xl shadow-xl p-6 space-y-5 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <Dialog.Title className="font-semibold text-base">Add a friend</Dialog.Title>
+              <Dialog.Title className="font-semibold text-base">Connect with someone</Dialog.Title>
               <Dialog.Description className="text-sm text-muted-foreground">
-                Enter their app ID to send a friend request.
+                Enter their app ID to send a connection request.
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
@@ -66,14 +66,14 @@ export function AddFriendDialog({ trigger }: AddFriendDialogProps) {
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               autoFocus
             />
-            <p className="text-xs text-muted-foreground">
-              They can find their ID in Settings → Profile.
-            </p>
+            <p className="text-xs text-muted-foreground">They can find their ID in Settings → Profile.</p>
           </div>
 
           <div className="flex gap-2 justify-end">
             <Dialog.Close asChild>
-              <Button variant="outline" size="sm">Cancel</Button>
+              <Button variant="outline" size="sm">
+                Cancel
+              </Button>
             </Dialog.Close>
             <Button size="sm" onClick={handleSend} disabled={!appId.trim() || isPending}>
               {isPending ? 'Sending…' : 'Send request'}

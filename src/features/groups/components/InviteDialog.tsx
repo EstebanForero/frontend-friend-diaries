@@ -28,7 +28,7 @@ export function InviteDialog({ groupId }: InviteDialogProps) {
       { invitee_id: target },
       {
         onSuccess: () => {
-          toast.success('Invitation sent!')
+          toast.success('Memory Book invitation sent!')
           setAppId('')
           setOpen(false)
         },
@@ -53,7 +53,7 @@ export function InviteDialog({ groupId }: InviteDialogProps) {
             <div className="space-y-1">
               <Dialog.Title className="font-semibold text-base">Invite someone</Dialog.Title>
               <Dialog.Description className="text-sm text-muted-foreground">
-                Pick a friend or enter an app ID.
+                Pick someone you know or enter an app ID.
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
@@ -66,7 +66,7 @@ export function InviteDialog({ groupId }: InviteDialogProps) {
           {/* Friends quick-select */}
           {(friends?.length ?? 0) > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Your friends</p>
+              <p className="text-xs font-medium text-muted-foreground">Your people</p>
               <div className="space-y-1.5 max-h-44 overflow-y-auto -mx-1 px-1">
                 {friends!.map((f) => (
                   <FriendRow
@@ -94,7 +94,9 @@ export function InviteDialog({ groupId }: InviteDialogProps) {
 
           <div className="flex gap-2 justify-end">
             <Dialog.Close asChild>
-              <Button variant="outline" size="sm">Cancel</Button>
+              <Button variant="outline" size="sm">
+                Cancel
+              </Button>
             </Dialog.Close>
             <Button size="sm" onClick={() => handleInvite(appId)} disabled={!appId.trim() || isPending}>
               {isPending ? 'Sending…' : 'Send invitation'}
@@ -106,15 +108,7 @@ export function InviteDialog({ groupId }: InviteDialogProps) {
   )
 }
 
-function FriendRow({
-  friend,
-  onInvite,
-  isPending,
-}: {
-  friend: Friend
-  onInvite: () => void
-  isPending: boolean
-}) {
+function FriendRow({ friend, onInvite, isPending }: { friend: Friend; onInvite: () => void; isPending: boolean }) {
   const displayName = friend.nickname || friend.display_name
   const tagLabel = FRIEND_TAGS.find((t) => t.value === friend.tag)?.label
   const initials = displayName
@@ -127,9 +121,7 @@ function FriendRow({
   return (
     <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-accent/40 transition-colors">
       <Avatar className="size-8 shrink-0">
-        <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">
-          {initials}
-        </AvatarFallback>
+        <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">{initials}</AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{displayName}</p>

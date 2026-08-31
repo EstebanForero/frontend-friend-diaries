@@ -70,14 +70,12 @@ function SettingsPage() {
             <span className="text-sm text-muted-foreground">App ID</span>
             <div className="flex flex-col items-end gap-0.5">
               {user?.app_id && <CopyableId id={user.app_id} className="text-sm" />}
-              <span className="text-[11px] text-muted-foreground">Share this so friends can invite you</span>
+              <span className="text-[11px] text-muted-foreground">Share this so people can connect with you</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Plan</span>
-            <Badge variant={user?.is_premium ? 'default' : 'secondary'}>
-              {user?.is_premium ? 'Premium' : 'Free'}
-            </Badge>
+            <Badge variant={user?.is_premium ? 'default' : 'secondary'}>{user?.is_premium ? 'Premium' : 'Free'}</Badge>
           </div>
         </CardContent>
       </Card>
@@ -89,20 +87,24 @@ function SettingsPage() {
               <Bell className="size-4 text-primary" />
               Notifications
             </CardTitle>
-            <CardDescription>Get notified when your partner writes in the diary.</CardDescription>
+            <CardDescription>Get notified when someone adds to a Memory Book.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">
-                  {pushState === 'subscribed' ? 'Notifications enabled' : pushState === 'denied' ? 'Notifications blocked' : 'Notifications disabled'}
+                  {pushState === 'subscribed'
+                    ? 'Notifications enabled'
+                    : pushState === 'denied'
+                      ? 'Notifications blocked'
+                      : 'Notifications disabled'}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {pushState === 'denied'
                     ? 'Allow notifications in your browser/device settings to enable this.'
                     : pushState === 'subscribed'
-                    ? 'You will receive notifications for new diary entries.'
-                    : 'Enable to get notified when someone writes in your shared diary.'}
+                      ? 'You will receive notifications for new memories.'
+                      : 'Enable to get notified when someone adds to a shared book.'}
                 </p>
               </div>
               {pushState === 'unsubscribed' && (
@@ -149,11 +151,7 @@ function SettingsPage() {
                   </div>
                   <div className="flex shrink-0 overflow-hidden rounded-full border">
                     {palette.swatches.map((swatch) => (
-                      <span
-                        key={swatch}
-                        className="size-5"
-                        style={{ backgroundColor: swatch }}
-                      />
+                      <span key={swatch} className="size-5" style={{ backgroundColor: swatch }} />
                     ))}
                   </div>
                 </div>
@@ -174,9 +172,7 @@ function SettingsPage() {
         <CardContent className="space-y-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="text-sm font-medium">
-                {settings.backgroundName ?? 'No image selected'}
-              </p>
+              <p className="text-sm font-medium">{settings.backgroundName ?? 'No image selected'}</p>
               <p className="text-xs text-muted-foreground">
                 {settings.backgroundImage ? 'Custom device background' : 'Using the theme background'}
               </p>
@@ -189,11 +185,7 @@ function SettingsPage() {
                 className="hidden"
                 onChange={(event) => handleBackgroundUpload(event.target.files?.[0])}
               />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => backgroundInputRef.current?.click()}
-              >
+              <Button type="button" variant="outline" onClick={() => backgroundInputRef.current?.click()}>
                 <Upload className="size-4" />
                 Upload
               </Button>
@@ -204,7 +196,10 @@ function SettingsPage() {
                   size="icon"
                   title="Remove background"
                   onClick={() =>
-                    setAppearance({ backgroundImage: null, backgroundName: null })
+                    setAppearance({
+                      backgroundImage: null,
+                      backgroundName: null,
+                    })
                   }
                 >
                   <X className="size-4" />
@@ -232,7 +227,9 @@ function SettingsPage() {
                 id="background-fit"
                 value={settings.backgroundFit}
                 onChange={(event) =>
-                  setAppearance({ backgroundFit: event.target.value as BackgroundFit })
+                  setAppearance({
+                    backgroundFit: event.target.value as BackgroundFit,
+                  })
                 }
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring"
               >
@@ -252,7 +249,9 @@ function SettingsPage() {
                   step="0.01"
                   value={settings.backgroundOpacity}
                   onChange={(event) =>
-                    setAppearance({ backgroundOpacity: Number(event.target.value) })
+                    setAppearance({
+                      backgroundOpacity: Number(event.target.value),
+                    })
                   }
                   className="px-0"
                 />
@@ -285,19 +284,19 @@ function SettingsPage() {
                   'rounded-lg border bg-card p-3 text-left transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50',
                   settings.fontChoice === font.value && 'border-primary bg-primary/5',
                 )}
-                style={{ fontFamily: font.value === 'custom' && !settings.customFontData ? undefined : font.css }}
+                style={{
+                  fontFamily: font.value === 'custom' && !settings.customFontData ? undefined : font.css,
+                }}
               >
                 <p className="text-sm font-semibold">{font.label}</p>
-                <p className="mt-1 text-lg">Dear diary</p>
+                <p className="mt-1 text-lg">A moment worth keeping</p>
               </button>
             ))}
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium">
-                {settings.customFontName ?? 'No custom font selected'}
-              </p>
+              <p className="truncate text-sm font-medium">{settings.customFontName ?? 'No custom font selected'}</p>
               <p className="text-xs text-muted-foreground">Supports WOFF, WOFF2, TTF, and OTF.</p>
             </div>
             <div className="flex gap-2">
@@ -383,7 +382,10 @@ function compressImageForStorage(file: File): Promise<string> {
       }
       resolve(dataUrl)
     }
-    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Failed to load image')) }
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('Failed to load image'))
+    }
     img.src = objectUrl
   })
 }

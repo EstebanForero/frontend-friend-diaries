@@ -1,9 +1,12 @@
 import { apiClient } from '@/lib/api/client'
-import type { Group, GroupMemberDetail, PendingGroupInvitation } from '@/types'
+import type { Group, GroupMemberDetail, MemoryBookColor, MemoryBookKind, PendingGroupInvitation } from '@/types'
 
 export interface CreateGroupPayload {
   name: string
   timezone?: string
+  kind?: MemoryBookKind
+  emoji?: string
+  color?: MemoryBookColor
 }
 
 export interface InvitePayload {
@@ -11,30 +14,23 @@ export interface InvitePayload {
 }
 
 export const groupsApi = {
-  list: () =>
-    apiClient.get<Group[]>('/groups'),
+  list: () => apiClient.get<Group[]>('/groups'),
 
-  get: (groupId: string) =>
-    apiClient.get<Group>(`/groups/${groupId}`),
+  get: (groupId: string) => apiClient.get<Group>(`/groups/${groupId}`),
 
-  create: (payload: CreateGroupPayload) =>
-    apiClient.post<Group>('/groups', payload),
+  create: (payload: CreateGroupPayload) => apiClient.post<Group>('/groups', payload),
 
-  getMembers: (groupId: string) =>
-    apiClient.get<GroupMemberDetail[]>(`/groups/${groupId}/members`),
+  update: (groupId: string, payload: CreateGroupPayload) => apiClient.put<Group>(`/groups/${groupId}`, payload),
 
-  invite: (groupId: string, payload: InvitePayload) =>
-    apiClient.post<void>(`/groups/${groupId}/invite`, payload),
+  getMembers: (groupId: string) => apiClient.get<GroupMemberDetail[]>(`/groups/${groupId}/members`),
 
-  acceptInvitation: (groupId: string) =>
-    apiClient.post<void>(`/groups/${groupId}/accept`),
+  invite: (groupId: string, payload: InvitePayload) => apiClient.post<void>(`/groups/${groupId}/invite`, payload),
 
-  declineInvitation: (groupId: string) =>
-    apiClient.post<void>(`/groups/${groupId}/decline`),
+  acceptInvitation: (groupId: string) => apiClient.post<void>(`/groups/${groupId}/accept`),
 
-  getInvitations: () =>
-    apiClient.get<PendingGroupInvitation[]>('/groups/invitations'),
+  declineInvitation: (groupId: string) => apiClient.post<void>(`/groups/${groupId}/decline`),
 
-  leave: (groupId: string) =>
-    apiClient.delete<void>(`/groups/${groupId}/leave`),
+  getInvitations: () => apiClient.get<PendingGroupInvitation[]>('/groups/invitations'),
+
+  leave: (groupId: string) => apiClient.delete<void>(`/groups/${groupId}/leave`),
 }

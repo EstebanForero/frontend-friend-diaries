@@ -3,13 +3,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { useSetFriendLabel } from '../hooks/useFriends'
 import { FRIEND_TAGS, type Friend } from '@/types'
 import { cn } from '@/lib/utils'
@@ -48,9 +42,7 @@ export function FriendLabelSheet({ friend, open, onOpenChange }: FriendLabelShee
       <SheetContent side="bottom">
         <SheetHeader>
           <SheetTitle>Label {friend.nickname || friend.display_name}</SheetTitle>
-          <SheetDescription>
-            Only you can see this — it helps you remember who they are to you.
-          </SheetDescription>
+          <SheetDescription>Only you can see this — it helps you remember who they are to you.</SheetDescription>
         </SheetHeader>
 
         <div className="px-5 pb-8 space-y-6">
@@ -86,9 +78,7 @@ export function FriendLabelSheet({ friend, open, onOpenChange }: FriendLabelShee
               onChange={(e) => setNickname(e.target.value)}
               maxLength={100}
             />
-            <p className="text-xs text-muted-foreground">
-              Shown instead of their display name in your diary.
-            </p>
+            <p className="text-xs text-muted-foreground">Shown instead of their display name in your Memory Books.</p>
           </div>
 
           <Button className="w-full" onClick={handleSave} disabled={isPending}>

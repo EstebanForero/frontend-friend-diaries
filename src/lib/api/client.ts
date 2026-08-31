@@ -62,7 +62,10 @@ class ApiClient {
     if (!response.ok) {
       let serverMessage: string | undefined
       try {
-        const data = (await response.json()) as { error?: string; message?: string }
+        const data = (await response.json()) as {
+          error?: string
+          message?: string
+        }
         serverMessage = data.error ?? data.message
       } catch {
         // ignore parse error
@@ -122,9 +125,14 @@ class ApiClient {
     if (!response.ok) {
       let serverMessage: string | undefined
       try {
-        const data = (await response.json()) as { error?: string; message?: string }
+        const data = (await response.json()) as {
+          error?: string
+          message?: string
+        }
         serverMessage = data.error ?? data.message
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
       throw new ApiError(response.status, getFriendlyErrorMessage(response.status, path, serverMessage), `POST ${path}`)
     }
 
@@ -140,11 +148,7 @@ function normalizeBaseUrl(value: string) {
 
   try {
     const url = new URL(value, window.location.origin)
-    if (
-      window.location.protocol === 'https:' &&
-      url.protocol === 'http:' &&
-      url.host === window.location.host
-    ) {
+    if (window.location.protocol === 'https:' && url.protocol === 'http:' && url.host === window.location.host) {
       return `${window.location.origin}${url.pathname}${url.search}`
     }
   } catch {
@@ -184,7 +188,7 @@ function getFriendlyErrorMessage(status: number, path: string, serverMessage?: s
 
 function getNotFoundMessage(path: string) {
   if (path.includes('/groups/')) {
-    return 'That diary could not be found. It may have been deleted, or you may no longer have access.'
+    return 'That Memory Book could not be found. It may have been deleted, or you may no longer have access.'
   }
   if (path.includes('/share/notes/')) {
     return 'That shared note link is invalid or has expired.'

@@ -4,7 +4,7 @@ import type { Note } from '@/types'
 export interface CreateNotePayload {
   content: string
   date?: string
-  image_ids?: string[]
+  media_ids?: string[]
 }
 
 export interface UpdateNotePayload {
@@ -12,23 +12,19 @@ export interface UpdateNotePayload {
 }
 
 export const notesApi = {
-  listByDate: (groupId: string, date: string) =>
-    apiClient.get<Note[]>(`/groups/${groupId}/notes/${date}`),
+  listByDate: (groupId: string, date: string) => apiClient.get<Note[]>(`/groups/${groupId}/notes/${date}`),
 
-  create: (groupId: string, payload: CreateNotePayload) =>
-    apiClient.post<Note>(`/groups/${groupId}/notes`, payload),
+  recent: (groupId: string, limit = 8) => apiClient.get<Note[]>(`/groups/${groupId}/notes/recent?limit=${limit}`),
 
-  update: (noteId: string, payload: UpdateNotePayload) =>
-    apiClient.patch<Note>(`/notes/${noteId}`, payload),
+  create: (groupId: string, payload: CreateNotePayload) => apiClient.post<Note>(`/groups/${groupId}/notes`, payload),
 
-  delete: (noteId: string) =>
-    apiClient.delete<void>(`/notes/${noteId}`),
+  update: (noteId: string, payload: UpdateNotePayload) => apiClient.patch<Note>(`/notes/${noteId}`, payload),
 
-  createShareToken: (noteId: string) =>
-    apiClient.post<{ share_token: string }>(`/notes/${noteId}/share`),
+  delete: (noteId: string) => apiClient.delete<void>(`/notes/${noteId}`),
 
-  getByShareToken: (token: string) =>
-    apiClient.get<Note>(`/share/notes/${token}`),
+  createShareToken: (noteId: string) => apiClient.post<{ share_token: string }>(`/notes/${noteId}/share`),
+
+  getByShareToken: (token: string) => apiClient.get<Note>(`/share/notes/${token}`),
 
   calendarSummary: (groupId: string, month: string, authorId?: string) => {
     const params = new URLSearchParams({ month })
