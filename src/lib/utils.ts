@@ -8,9 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDate(date: string | Date): string {
   // If given a plain YYYY-MM-DD string, append T00:00:00 so Date() treats it as
   // local midnight instead of UTC midnight (which would show the previous day in UTC+ zones).
-  const d = typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
-    ? new Date(date + 'T00:00:00')
-    : new Date(date)
+  const d = typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(date + 'T00:00:00') : new Date(date)
   return new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -82,7 +80,7 @@ export function isToday(dateStr: string): boolean {
 // In Tauri, the WebView origin is tauri://localhost, so relative paths break —
 // we prepend the API server origin from VITE_API_URL.
 export function resolveMediaUrl(url: string): string {
-  if (!url || url.startsWith('http')) return url
+  if (!url || /^(https?:|blob:|data:)/i.test(url)) return url
   const apiBase = import.meta.env.VITE_API_URL as string | undefined
   if (!apiBase || apiBase.startsWith('/')) return url
   try {

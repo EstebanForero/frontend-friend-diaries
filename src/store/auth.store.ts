@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { User } from '@/types'
 import { apiClient } from '@/lib/api/client'
+import { configureOfflineSync } from '@/lib/offline/note-sync'
 
 export interface AuthState {
   user: User | null
@@ -23,11 +24,13 @@ export const useAuthStore = create<AuthState>()((set) => ({
 
   setAuth: (user, accessToken) => {
     apiClient.setAccessToken(accessToken)
+    configureOfflineSync(user.id)
     set({ user, isAuthenticated: true, isLoading: false })
   },
 
   clearAuth: () => {
     apiClient.setAccessToken(null)
+    configureOfflineSync(null)
     set({ user: null, isAuthenticated: false, isLoading: false })
   },
 

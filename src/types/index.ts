@@ -49,6 +49,7 @@ export interface NoteMedia {
 
 export interface Note {
   id: string
+  client_id?: string
   group_id: string
   author_id: string
   diary_date: string
@@ -58,6 +59,7 @@ export interface Note {
   media: NoteMedia[]
   created_at: string
   updated_at: string
+  sync_status?: 'pending' | 'failed'
 }
 
 export type ReactionType = string

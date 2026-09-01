@@ -1,5 +1,9 @@
+import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { notesApi, type CreateNotePayload, type UpdateNotePayload } from '../api/notes.api'
+import { useAuthStore } from '@/store/auth.store'
+import { mergePendingNotes, queueNoteForSync } from '@/lib/offline/note-sync'
+import { cacheRecentImages } from '@/lib/offline/media-cache'
 
 export const noteKeys = {
   all: ['notes'] as const,
@@ -10,29 +14,64 @@ export const noteKeys = {
 }
 
 export function useRecentNotes(groupId: string) {
-  return useQuery({
+  const qc = useQueryClient()
+  const userId = useAuthStore((state) => state.user?.id)
+  const query = useQuery({
     queryKey: noteKeys.recent(groupId),
-    queryFn: () => notesApi.recent(groupId),
+    queryFn: async () => mergePendingNotes(await notesApi.recent(groupId), userId, groupId),
     enabled: !!groupId,
     staleTime: 30_000,
   })
+
+  useEffect(() => {
+    if (!query.data) return
+    void cacheRecentImages(query.data)
+
+    if (!navigator.onLine) return
+    const dates = [...new Set(query.data.map((note) => note.diary_date))]
+    for (const date of dates) {
+      void qc.prefetchQuery({
+        queryKey: noteKeys.byDate(groupId, date),
+        queryFn: async () => mergePendingNotes(await notesApi.listByDate(groupId, date), userId, groupId, date),
+        staleTime: 5 * 60 * 1000,
+      })
+    }
+  }, [groupId, qc, query.data, userId])
+
+  return query
 }
 
 export function useNotesByDate(groupId: string, date: string) {
-  return useQuery({
+  const userId = useAuthStore((state) => state.user?.id)
+  const query = useQuery({
     queryKey: noteKeys.byDate(groupId, date),
-    queryFn: () => notesApi.listByDate(groupId, date),
+    queryFn: async () => mergePendingNotes(await notesApi.listByDate(groupId, date), userId, groupId, date),
     enabled: !!groupId && !!date,
   })
+
+  useEffect(() => {
+    if (query.data) void cacheRecentImages(query.data)
+  }, [query.data])
+
+  return query
+}
+
+export interface CreateNoteMutationPayload extends CreateNotePayload {
+  media_files?: File[]
 }
 
 export function useCreateNote(groupId: string, date: string) {
-  const qc = useQueryClient()
+  const user = useAuthStore((state) => state.user)
   return useMutation({
-    mutationFn: (payload: CreateNotePayload) => notesApi.create(groupId, payload),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: noteKeys.byDate(groupId, date) })
-      void qc.invalidateQueries({ queryKey: noteKeys.recent(groupId) })
+    mutationFn: (payload: CreateNoteMutationPayload) => {
+      if (!user) throw new Error('Sign in before saving a memory.')
+      return queueNoteForSync({
+        groupId,
+        authorId: user.id,
+        date: payload.date ?? date,
+        content: payload.content,
+        mediaFiles: payload.media_files,
+      })
     },
   })
 }

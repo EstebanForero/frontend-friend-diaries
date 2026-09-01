@@ -6,11 +6,11 @@ export const reactionKeys = {
   byNote: (noteId: string) => ['reactions', noteId] as const,
 }
 
-export function useReactions(noteId: string) {
+export function useReactions(noteId: string, enabled = true) {
   return useQuery({
     queryKey: reactionKeys.byNote(noteId),
     queryFn: () => reactionsApi.list(noteId),
-    enabled: !!noteId,
+    enabled: !!noteId && enabled,
   })
 }
 

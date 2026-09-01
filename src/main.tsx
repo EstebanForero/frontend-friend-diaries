@@ -9,6 +9,7 @@ import { useAuthStore } from './store/auth.store'
 import { authApi } from './features/auth/api/auth.api'
 import { ApiError } from './lib/api/client'
 import { sessionStore } from './lib/session/session-store'
+import { configureOfflineSync } from './lib/offline/note-sync'
 import './index.css'
 
 // Register the service worker for all users (image caching + push notifications)
@@ -52,6 +53,7 @@ function App() {
 
       if (session?.user) {
         auth.restoreSession(session.user)
+        configureOfflineSync(session.user.id)
       }
 
       try {
@@ -89,7 +91,7 @@ function App() {
     return () => {
       cancelled = true
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
@@ -97,7 +99,7 @@ function App() {
       client={queryClient}
       persistOptions={{
         persister: idbPersister,
-        maxAge: 7 * 24 * 60 * 60 * 1000, // keep cache for 7 days
+        maxAge: 90 * 24 * 60 * 60 * 1000, // previously opened memories remain readable offline
         dehydrateOptions: {
           shouldDehydrateQuery: (query) => {
             const key = query.queryKey as unknown[]
@@ -115,6 +117,4 @@ function App() {
 }
 
 const rootElement = document.getElementById('root')!
-ReactDOM.createRoot(rootElement).render(
-  <App />,
-)
+ReactDOM.createRoot(rootElement).render(<App />)

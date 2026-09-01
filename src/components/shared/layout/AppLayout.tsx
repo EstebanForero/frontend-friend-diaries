@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Link } from '@tanstack/react-router'
-import { Bell, BookHeart, BookOpen, LogOut, Settings, Users } from 'lucide-react'
+import { Bell, BookHeart, BookOpen, CloudUpload, LogOut, RefreshCw, Settings, Users, WifiOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLogout } from '@/features/auth/hooks/useAuth'
 import { useAuthStore } from '@/store/auth.store'
@@ -9,6 +9,9 @@ import { CopyableId } from '@/components/ui/copyable-id'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { MobileNav } from '@/components/shared/navigation/MobileNav'
 import { useGlobalNotifications } from '@/features/notifications/hooks/useNotifications'
+import { useOfflineSync } from '@/lib/offline/useOfflineSync'
+import { syncPendingNotes } from '@/lib/offline/note-sync'
+import { cn } from '@/lib/utils'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -121,6 +124,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
           <ThemeToggle />
         </div>
+        <OfflineSyncBanner />
         {/* Scrollable content area — this is what actually scrolls on both desktop and mobile */}
         <div ref={mainRef} className="flex-1 overflow-y-auto p-5 pb-24 md:pb-8 md:p-8">
           {children}
@@ -128,6 +132,43 @@ export function AppLayout({ children }: AppLayoutProps) {
       </main>
 
       <MobileNav unreadCount={unreadCount} />
+    </div>
+  )
+}
+
+function OfflineSyncBanner() {
+  const { online, syncing, pendingCount, lastError } = useOfflineSync()
+
+  if (online && !syncing && pendingCount === 0) return null
+
+  const label = !online
+    ? `Offline${pendingCount > 0 ? ` · ${pendingCount} ${pendingCount === 1 ? 'memory' : 'memories'} waiting` : ''}`
+    : syncing
+      ? `Syncing ${pendingCount} ${pendingCount === 1 ? 'memory' : 'memories'}…`
+      : `${pendingCount} ${pendingCount === 1 ? 'memory needs' : 'memories need'} to sync`
+
+  return (
+    <div
+      role="status"
+      className={cn(
+        'flex min-h-9 items-center justify-center gap-2 border-b px-4 py-2 text-xs font-medium',
+        !online ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' : 'bg-primary/10 text-primary',
+      )}
+      title={lastError}
+    >
+      {!online ? (
+        <WifiOff className="size-3.5 shrink-0" />
+      ) : syncing ? (
+        <RefreshCw className="size-3.5 shrink-0 animate-spin" />
+      ) : (
+        <CloudUpload className="size-3.5 shrink-0" />
+      )}
+      <span>{label}</span>
+      {online && !syncing && pendingCount > 0 && (
+        <button type="button" className="ml-1 underline underline-offset-2" onClick={() => void syncPendingNotes()}>
+          Try now
+        </button>
+      )}
     </div>
   )
 }

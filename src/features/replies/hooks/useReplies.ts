@@ -5,11 +5,11 @@ export const replyKeys = {
   byNote: (noteId: string) => ['replies', noteId] as const,
 }
 
-export function useReplies(noteId: string) {
+export function useReplies(noteId: string, enabled = true) {
   return useQuery({
     queryKey: replyKeys.byNote(noteId),
     queryFn: () => repliesApi.list(noteId),
-    enabled: !!noteId,
+    enabled: !!noteId && enabled,
   })
 }
 

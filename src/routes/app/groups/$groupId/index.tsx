@@ -18,6 +18,8 @@ import {
   Settings,
   Clock3,
   ImageIcon,
+  CloudUpload,
+  CircleAlert,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -41,16 +43,16 @@ import { MembersSheet } from '@/features/groups/components/MembersSheet'
 import { formatDate, formatTime, formatTimeInZone, todayDateString, todayInZone, resolveMediaUrl } from '@/lib/utils'
 import { useCreateReply, useReplies } from '@/features/replies/hooks/useReplies'
 import { useReactions, useRemoveReaction, useUpsertReaction } from '@/features/reactions/hooks/useReactions'
-import { mediaApi } from '@/features/media/api/media.api'
 import { cn } from '@/lib/utils'
 import { prepareVideoForUpload } from '@/lib/media/video'
 import type { GroupMemberDetail, Note, NoteMedia, ReactionType } from '@/types'
 import { DEFAULT_REACTION_EMOJIS, reactionEmoji } from '@/types'
+import { OfflineImage } from '@/components/shared/OfflineImage'
 
 interface PendingMedia {
   localUrl: string
   kind: 'image' | 'video'
-  uploadedId?: string
+  file?: File
   uploading: boolean
   compressionProgress?: number
   error?: boolean
@@ -437,7 +439,7 @@ function MemoryBookPage() {
       setPendingMedia((prev) => [...prev, placeholder])
 
       try {
-        const uploadFile = isVideo
+        const preparedFile = isVideo
           ? (
               await prepareVideoForUpload(file, (progress) => {
                 setPendingMedia((prev) =>
@@ -446,9 +448,17 @@ function MemoryBookPage() {
               })
             ).file
           : file
-        const { id } = await mediaApi.upload(uploadFile)
         setPendingMedia((prev) =>
-          prev.map((p) => (p.localUrl === localUrl ? { ...p, uploading: false, uploadedId: id } : p)),
+          prev.map((p) =>
+            p.localUrl === localUrl
+              ? {
+                  ...p,
+                  file: preparedFile,
+                  uploading: false,
+                  compressionProgress: 100,
+                }
+              : p,
+          ),
         )
       } catch (error) {
         URL.revokeObjectURL(localUrl)
@@ -484,8 +494,8 @@ function MemoryBookPage() {
   }
 
   const handleSubmit = () => {
-    const mediaIds = pendingMedia.filter((p) => p.uploadedId).map((p) => p.uploadedId!)
-    if (!content.trim() && mediaIds.length === 0) return
+    const mediaFiles = pendingMedia.flatMap((item) => (item.file ? [item.file] : []))
+    if (!content.trim() && mediaFiles.length === 0) return
     if (pendingMedia.some((p) => p.uploading)) {
       toast.info('Media is still preparing…')
       return
@@ -494,13 +504,16 @@ function MemoryBookPage() {
       {
         content: content.trim(),
         date,
-        media_ids: mediaIds.length > 0 ? mediaIds : undefined,
+        media_files: mediaFiles.length > 0 ? mediaFiles : undefined,
       },
       {
         onSuccess: () => {
           setContent('')
           pendingMedia.forEach((p) => URL.revokeObjectURL(p.localUrl))
           setPendingMedia([])
+          toast.success(
+            navigator.onLine ? 'Memory saved. Syncing now…' : 'Saved offline. It will sync when you reconnect.',
+          )
         },
         onError: (err) => toast.error(err.message),
       },
@@ -586,7 +599,11 @@ function MemoryBookPage() {
                         onChange={setDate}
                         onClose={() => {
                           setShowCalendar(false)
-                          window.requestAnimationFrame(() => dateButtonRef.current?.focus({ preventScroll: true }))
+                          window.requestAnimationFrame(() =>
+                            dateButtonRef.current?.focus({
+                              preventScroll: true,
+                            }),
+                          )
                         }}
                         counts={calendarCounts ?? {}}
                         today={diaryToday}
@@ -1008,7 +1025,10 @@ function RecentMemoriesSidebar({
 
 function compactDate(date: string) {
   const parsed = new Date(`${date}T12:00:00`)
-  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(parsed)
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+  }).format(parsed)
 }
 
 function NoteImageGrid({ images }: { images: NoteMedia[] }) {
@@ -1101,7 +1121,7 @@ function NoteImageGrid({ images }: { images: NoteMedia[] }) {
       onClick={() => open(i)}
       className={cn('relative overflow-hidden bg-muted focus:outline-none group', cls)}
     >
-      <img
+      <OfflineImage
         src={resolveMediaUrl(img.media_url)}
         alt=""
         className="size-full object-cover transition-transform duration-200 group-hover:scale-105"
@@ -1122,7 +1142,7 @@ function NoteImageGrid({ images }: { images: NoteMedia[] }) {
         onClick={() => open(0)}
         className="group w-full overflow-hidden rounded-xl focus:outline-none"
       >
-        <img
+        <OfflineImage
           src={resolveMediaUrl(images[0].media_url)}
           alt=""
           className="w-full max-h-72 object-contain rounded-xl bg-muted transition-opacity group-hover:opacity-95"
@@ -1204,7 +1224,7 @@ function NoteImageGrid({ images }: { images: NoteMedia[] }) {
             )}
 
             {/* Image */}
-            <img
+            <OfflineImage
               src={resolveMediaUrl(images[lightboxIndex].media_url)}
               alt=""
               className="max-h-[88vh] max-w-[88vw] rounded-lg object-contain select-none"
@@ -1238,7 +1258,7 @@ function NoteImageGrid({ images }: { images: NoteMedia[] }) {
                       i === lightboxIndex ? 'border-white scale-110' : 'border-transparent opacity-60 hover:opacity-90',
                     )}
                   >
-                    <img src={resolveMediaUrl(img.media_url)} alt="" className="size-full object-cover" />
+                    <OfflineImage src={resolveMediaUrl(img.media_url)} alt="" className="size-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -1301,8 +1321,10 @@ function NoteCard({
 }) {
   const [replyContent, setReplyContent] = useState('')
   const [showReply, setShowReply] = useState(false)
-  const { data: reactions } = useReactions(note.id)
-  const { data: replies } = useReplies(note.id)
+  const replyInputRef = useRef<HTMLTextAreaElement>(null)
+  const isWaitingForSync = note.sync_status === 'pending' || note.sync_status === 'failed'
+  const { data: reactions } = useReactions(note.id, !isWaitingForSync)
+  const { data: replies } = useReplies(note.id, !isWaitingForSync)
   const { mutate: upsertReaction } = useUpsertReaction(note.id)
   const { mutate: removeReaction } = useRemoveReaction(note.id)
   const { mutate: createReply, isPending: isReplying } = useCreateReply(note.id)
@@ -1367,9 +1389,26 @@ function NoteCard({
   const handleReply = () => {
     if (!replyContent.trim()) return
     createReply(replyContent.trim(), {
-      onSuccess: () => setReplyContent(''),
+      onSuccess: () => {
+        setReplyContent('')
+        setShowReply(false)
+        toast.success('Reply added')
+      },
       onError: (err) => toast.error(err.message),
     })
+  }
+
+  const memoryPreview = note.content.trim()
+    ? note.content.trim()
+    : note.media.some((media) => media.media_kind === 'video')
+      ? 'Video memory'
+      : note.media.some((media) => media.media_kind === 'image')
+        ? 'Photo memory'
+        : 'Memory'
+
+  const openReply = () => {
+    setShowReply(true)
+    window.requestAnimationFrame(() => replyInputRef.current?.focus())
   }
 
   return (
@@ -1399,6 +1438,23 @@ function NoteCard({
               </span>
             )}
             {note.is_edited && <span className="text-[10px] italic text-muted-foreground">edited</span>}
+            {isWaitingForSync && (
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
+                  note.sync_status === 'failed'
+                    ? 'bg-destructive/10 text-destructive'
+                    : 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+                )}
+              >
+                {note.sync_status === 'failed' ? (
+                  <CircleAlert className="size-3" />
+                ) : (
+                  <CloudUpload className="size-3" />
+                )}
+                {note.sync_status === 'failed' ? 'Needs retry' : 'Waiting to sync'}
+              </span>
+            )}
           </div>
 
           {note.content && (
@@ -1414,32 +1470,38 @@ function NoteCard({
 
           {(note.media?.length ?? 0) > 0 && <NoteMediaGallery media={note.media} />}
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            {Object.entries(reactionCounts).map(([rt, count]) => {
-              const selected = myReaction?.reaction_type === rt
-              return (
-                <button
-                  key={rt}
-                  type="button"
-                  onClick={() => (selected ? removeReaction() : upsertReaction(rt))}
-                  className={cn(
-                    'inline-flex h-7 items-center gap-1 rounded-full border px-2 text-xs transition-colors hover:border-primary/50',
-                    selected && 'border-primary bg-primary/10 text-primary',
-                  )}
-                >
-                  <span>{reactionEmoji(rt)}</span>
-                  {(count ?? 0) > 0 && <span className="font-medium">{count}</span>}
-                </button>
-              )
-            })}
-            <EmojiReactionPicker
-              selectedReaction={myReaction?.reaction_type}
-              onSelect={(rt) => (myReaction?.reaction_type === rt ? removeReaction() : upsertReaction(rt))}
-            />
-          </div>
+          {!isWaitingForSync && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {Object.entries(reactionCounts).map(([rt, count]) => {
+                const selected = myReaction?.reaction_type === rt
+                return (
+                  <button
+                    key={rt}
+                    type="button"
+                    onClick={() => (selected ? removeReaction() : upsertReaction(rt))}
+                    className={cn(
+                      'inline-flex h-7 items-center gap-1 rounded-full border px-2 text-xs transition-colors hover:border-primary/50',
+                      selected && 'border-primary bg-primary/10 text-primary',
+                    )}
+                  >
+                    <span>{reactionEmoji(rt)}</span>
+                    {(count ?? 0) > 0 && <span className="font-medium">{count}</span>}
+                  </button>
+                )
+              })}
+              <EmojiReactionPicker
+                selectedReaction={myReaction?.reaction_type}
+                onSelect={(rt) => (myReaction?.reaction_type === rt ? removeReaction() : upsertReaction(rt))}
+              />
+            </div>
+          )}
 
-          {(replies?.length ?? 0) > 0 && (
+          {!isWaitingForSync && (replies?.length ?? 0) > 0 && (
             <div className="space-y-2 border-t pt-3">
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+                <MessageCircle className="size-3.5" />
+                {replies?.length} {replies?.length === 1 ? 'reply' : 'replies'}
+              </div>
               {replies?.map((reply) => {
                 const replyIsOwn = reply.author_id === currentUserId
                 const replyAuthor = members.find((m) => m.user_id === reply.author_id)
@@ -1466,68 +1528,92 @@ function NoteCard({
             </div>
           )}
 
-          <div className="border-t pt-3">
-            {showReply ? (
-              <div className="flex items-end gap-2">
-                <Textarea
-                  autoFocus
-                  value={replyContent}
-                  onChange={(e) => setReplyContent(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleReply()
-                    if (e.key === 'Escape') {
-                      setShowReply(false)
-                      setReplyContent('')
-                    }
-                  }}
-                  placeholder="Write a comment… (⌘ Enter to post)"
-                  className="min-h-9 resize-none rounded-lg bg-background/70 px-3 py-2 text-xs"
-                />
-                <div className="flex flex-col gap-1 shrink-0">
-                  <Button
-                    size="icon"
-                    className="size-8"
-                    disabled={!replyContent.trim() || isReplying}
-                    onClick={handleReply}
-                  >
-                    <Send className="size-3.5" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="size-8"
-                    onClick={() => {
-                      setShowReply(false)
-                      setReplyContent('')
-                    }}
-                  >
-                    <X className="size-3.5" />
-                  </Button>
+          {!isWaitingForSync && (
+            <div className="border-t pt-3">
+              {showReply ? (
+                <div className="space-y-2.5">
+                  <div className="flex overflow-hidden rounded-xl border bg-muted/55 text-xs">
+                    <span className="w-1 shrink-0 bg-primary" aria-hidden />
+                    <div className="min-w-0 px-3 py-2">
+                      <p className="font-semibold text-primary">Replying to {authorName}</p>
+                      <p className="mt-0.5 line-clamp-2 text-muted-foreground">{memoryPreview}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <Textarea
+                      ref={replyInputRef}
+                      autoFocus
+                      value={replyContent}
+                      onChange={(e) => setReplyContent(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleReply()
+                        if (e.key === 'Escape') {
+                          setShowReply(false)
+                          setReplyContent('')
+                        }
+                      }}
+                      placeholder="Write your reply…"
+                      aria-label={`Reply to ${authorName}'s memory`}
+                      className="min-h-11 resize-none rounded-xl bg-background/80 px-3 py-2.5 text-sm"
+                    />
+                    <Button
+                      size="icon"
+                      className="size-11 shrink-0 rounded-xl"
+                      disabled={!replyContent.trim() || isReplying}
+                      onClick={handleReply}
+                      aria-label="Send reply"
+                      title="Send reply"
+                    >
+                      <Send className="size-4" />
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 px-0.5">
+                    <p className="hidden text-[10px] text-muted-foreground sm:block">Ctrl/⌘ + Enter to send</p>
+                    <button
+                      type="button"
+                      className="ml-auto text-xs text-muted-foreground transition-colors hover:text-foreground"
+                      onClick={() => {
+                        setShowReply(false)
+                        setReplyContent('')
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowReply(true)}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <MessageCircle className="size-3.5" />
-                  Comment
-                </button>
-                {navigator.maxTouchPoints > 0 && (
+              ) : (
+                <div className="flex items-center gap-4">
                   <button
                     type="button"
-                    onClick={() => void shareNote()}
-                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={openReply}
+                    className="flex min-h-8 items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label={`Reply to ${authorName}'s memory`}
                   >
-                    <Share2 className="size-3.5" />
-                    Share
+                    <MessageCircle className="size-3.5" />
+                    Reply
+                    {(replies?.length ?? 0) > 0 && <span className="tabular-nums">{replies?.length}</span>}
                   </button>
-                )}
-              </div>
-            )}
-          </div>
+                  {'share' in navigator && (
+                    <button
+                      type="button"
+                      onClick={() => void shareNote()}
+                      className="flex min-h-8 items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <Share2 className="size-3.5" />
+                      Share
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {isWaitingForSync && (
+            <div className="flex items-center gap-2 border-t pt-3 text-xs text-muted-foreground">
+              <CloudUpload className="size-3.5 shrink-0" />
+              This memory is safely stored on this device and will upload automatically.
+            </div>
+          )}
         </div>
       </article>
     </div>

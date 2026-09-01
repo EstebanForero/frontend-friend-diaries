@@ -5,6 +5,7 @@ export interface CreateNotePayload {
   content: string
   date?: string
   media_ids?: string[]
+  client_id?: string
 }
 
 export interface UpdateNotePayload {
